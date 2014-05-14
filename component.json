@@ -1,0 +1,14 @@
+{
+  "name": "calvad_merge_pairs",
+  "repo": "jmarca/calvad_merge_pairs",
+  "description": "merge WIM and VDS pairs after they've been imputed",
+  "version": "0.0.1",
+  "keywords": ["calvad", "R", "rstats"],
+  "dependencies": {
+    "jmarca/calvad_rscripts":"*",
+    "jmarca/rstats_couch_utils":"*",
+    "jmarca/rstats_remote_files":"*"
+  },
+  "main":"index.js",
+  "license": "GPLV2"
+}
