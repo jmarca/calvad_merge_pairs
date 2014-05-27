@@ -26,7 +26,7 @@ day.of.week <- c('Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Sa
 lane.defs <- c('left lane','right lane 1', 'right lane 2', 'right lane 3', 'right lane 4', 'right lane 5', 'right lane 6', 'right lane 7', 'right lane 8')
 
 ###########################
-## process all of the wim sites
+## process the specified wim site
 ###########################
 
 year <- as.numeric(Sys.getenv(c('RYEAR'))[1])
@@ -50,15 +50,13 @@ if(is.null(direction)){
   exit(1)
 }
 
+## convenience...the canonical way to id in couchdb
+cdb.wimid <- paste('wim',wim.site,direction,sep='.')
+
 wim.path <- Sys.getenv(c('WIM_PATH'))[1]
 if(is.null(wim.path)){
   print('assign a valid direectory to the WIM_PATH environment variable')
   exit(1)
-}
-
-doplots <- Sys.getenv(c("R_DO_PLOTS"))[[1]]
-if(doplots==""){
-  doplots <- FALSE
 }
 
 make.merged.filepath <- function(vdsid,year,wim.id,direction){
@@ -73,6 +71,7 @@ make.merged.filepath <- function(vdsid,year,wim.id,direction){
   return (c(filepath,filename))
 }
 
+doplots = FALSE
 
 ## get wim file
 df.wim.zoo <-get.wim.imputed(wim.site,year,direction,wim.path=wim.path)
@@ -84,16 +83,23 @@ if(length(df.wim.zoo) == 1 || df.wim.zoo == 1){
 ## combine WIM imputation with paired VDS imputation
 
 ## which VDS site or sites?
+wim.vds.pairs <- get.list.closest.wim.pairs()
+wim.vds.pairs$dir <- capitalize(substr(wim.vds.pairs$direction,1,1))
 
 paired.vds <- wim.vds.pairs[wim.vds.pairs$wim_id==wim.dir[1] & wim.vds.pairs$dir==wim.dir[2],]
 if(dim(paired.vds)[1]==0){
     couch.set.state(year=year,detector.id=cdb.wimid,doc=list('paired'='none'))
 }else{
-    couch.set.state(year=year,detector.id=cdb.wimid,doc=list('paired'=paired.vds$vds_id))
+    couch.set.state(year=year
+                    ,detector.id=cdb.wimid
+                    ,doc=list('paired'=paired.vds$vds_id))
 }
 for(pair in paired.vds$vds_id){
-      ## check if a merged file is already attached to doc. if so, then bail
-    if(couch.has.attachment(docname=pair,attachment=make.merged.filepath(pair,year,wim.dir)[2])) {
+    ## check if a merged file is already attached to doc. if so, then bail
+    filepath <- make.merged.filepath(pair,year,wim.wise,direction)
+    if(couch.has.attachment(docname=pair
+                            ,attachment=filepath[2])
+       ) {
         next
     }
 
@@ -111,10 +117,9 @@ for(pair in paired.vds$vds_id){
     df.merged$tod   <- ts.lt$hour + (ts.lt$min/60)
     df.merged$day   <- ts.lt$wday
 
-    filepath <- make.merged.filepath(pair,year,wim.dir)[1]
-    save(df.merged,file=filepath,compress='xz')
-    couch.attach('vdsdata%2Ftracking',pair,filepath, local=TRUE)
-    rm(df.merged)
-    gc()
+    save(df.merged,file=filepath[1],compress='xz')
+    couch.attach('vdsdata%2Ftracking',pair,filepath[1], local=TRUE)
+    rm(df.merged,df.vds.zoo)
+    ## gc()
 }
 exit('done')
