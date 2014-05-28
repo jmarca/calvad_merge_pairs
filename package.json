@@ -1,0 +1,23 @@
+{
+  "name": "calvad_merge_pairs",
+  "version": "0.0.1",
+  "description": "merge vds and wim pairs",
+  "main": "lib/trigger_merge_pairs.js",
+  "dependencies": {
+    "calvad_wim_sites": "git://github.com/jmarca/calvad_wim_sites"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/jmarca/calvad_merge_pairs"
+  },
+  "author": "James E. Marca",
+  "license": "GPL v2",
+  "bugs": {
+    "url": "https://github.com/jmarca/calvad_merge_pairs/issues"
+  },
+  "homepage": "https://github.com/jmarca/calvad_merge_pairs"
+}
