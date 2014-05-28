@@ -1,3 +1,4 @@
+library('R.utils')
 library('RPostgreSQL')
 m <- dbDriver("PostgreSQL")
 

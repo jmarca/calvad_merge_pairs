@@ -4,7 +4,10 @@
   "description": "merge vds and wim pairs",
   "main": "lib/trigger_merge_pairs.js",
   "dependencies": {
-    "calvad_wim_sites": "git://github.com/jmarca/calvad_wim_sites"
+    "calvad_wim_sites": "git://github.com/jmarca/calvad_wim_sites",
+    "async": "^0.9.0",
+    "lodash": "^2.4.1",
+    "couch_check_state": "git://github.com/jmarca/couch_check_state"
   },
   "devDependencies": {},
   "scripts": {
