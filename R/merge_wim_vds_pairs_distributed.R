@@ -129,4 +129,14 @@ for(pair in paired.vds$vds_id){
     rm(df.merged,df.vds.zoo)
     ## gc()
 }
+if(dim(merged.vds)[1]>0){
+    couch.set.state(year=year
+                    ,detector.id=cdb.wimid
+                    ,doc=list('merged'=merged.vds$merged))
+}else{
+    couch.set.state(year=year
+                    ,detector.id=cdb.wimid
+                    ,doc=list('merged'='nopair'))
+}
+
 exit('done')
