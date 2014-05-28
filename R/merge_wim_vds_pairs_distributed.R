@@ -97,12 +97,15 @@ if(dim(paired.vds)[1]==0){
                     ,detector.id=cdb.wimid
                     ,doc=list('paired'=paired.vds$vds_id))
 }
+merged.vds <- data.frame()
+
 for(pair in paired.vds$vds_id){
     ## check if a merged file is already attached to doc. if so, then bail
     filepath <- make.merged.filepath(pair,year,wim.site,direction)
     if(couch.has.attachment(docname=pair
                             ,attachment=filepath[2])
        ) {
+        merged.vds[dim(merged.vds)[1]+1,'merged'] <- pair
         next
     }
 
@@ -122,6 +125,7 @@ for(pair in paired.vds$vds_id){
 
     save(df.merged,file=filepath[1],compress='xz')
     couch.attach('vdsdata%2Ftracking',pair,filepath[1], local=TRUE)
+    merged.vds[dim(merged.vds)[1]+1,'merged'] <- pair
     rm(df.merged,df.vds.zoo)
     ## gc()
 }
