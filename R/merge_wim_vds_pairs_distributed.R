@@ -25,9 +25,34 @@ pf <- function(x,y){panel.smoothScatter(x,y,nbin=c(200,200))}
 day.of.week <- c('Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday')
 lane.defs <- c('left lane','right lane 1', 'right lane 2', 'right lane 3', 'right lane 4', 'right lane 5', 'right lane 6', 'right lane 7', 'right lane 8')
 
+
+make.merged.filepath <- function(vdsid,year,wim.id,direction){
+  savepath <- paste(wim.path,year,sep='/')
+  if(!file.exists(savepath)){dir.create(savepath)}
+  savepath <- paste(savepath,wim.id,sep='/')
+  if(!file.exists(savepath)){dir.create(savepath)}
+  savepath <- paste(savepath,direction,sep='/')
+  if(!file.exists(savepath)){dir.create(savepath)}
+  filename <- paste('wim',wim.id,direction,'vdsid',vdsid,year,'paired','RData',sep='.')
+  filepath <- paste(savepath,filename,sep='/')
+  return (c(filepath,filename))
+}
+
+## which VDS site or sites?
+wim.vds.pairs <- get.list.closest.wim.pairs()
+wim.vds.pairs$dir <- capitalize(substr(wim.vds.pairs$direction,1,1))
+
 ###########################
 ## process the specified wim site
 ###########################
+
+wim.path <- Sys.getenv(c('WIM_PATH'))[1]
+if(is.null(wim.path)){
+  print('assign a valid direectory to the WIM_PATH environment variable')
+  exit(1)
+}
+
+doplots = FALSE
 
 year <- as.numeric(Sys.getenv(c('RYEAR'))[1])
 if(is.null(year)){
@@ -53,25 +78,6 @@ if(is.null(direction)){
 ## convenience...the canonical way to id in couchdb
 cdb.wimid <- paste('wim',wim.site,direction,sep='.')
 
-wim.path <- Sys.getenv(c('WIM_PATH'))[1]
-if(is.null(wim.path)){
-  print('assign a valid direectory to the WIM_PATH environment variable')
-  exit(1)
-}
-
-make.merged.filepath <- function(vdsid,year,wim.id,direction){
-  savepath <- paste(wim.path,year,sep='/')
-  if(!file.exists(savepath)){dir.create(savepath)}
-  savepath <- paste(savepath,wim.dir[1],sep='/')
-  if(!file.exists(savepath)){dir.create(savepath)}
-  savepath <- paste(savepath,wim.dir[2],sep='/')
-  if(!file.exists(savepath)){dir.create(savepath)}
-  filename <- paste('wim',wim.id,direction,'vdsid',vdsid,year,'paired','RData',sep='.')
-  filepath <- paste(savepath,filename,sep='/')
-  return (c(filepath,filename))
-}
-
-doplots = FALSE
 
 ## get wim file
 df.wim.zoo <-get.wim.imputed(wim.site,year,direction,wim.path=wim.path)
@@ -82,11 +88,8 @@ if(length(df.wim.zoo) == 1 || df.wim.zoo == 1){
 
 ## combine WIM imputation with paired VDS imputation
 
-## which VDS site or sites?
-wim.vds.pairs <- get.list.closest.wim.pairs()
-wim.vds.pairs$dir <- capitalize(substr(wim.vds.pairs$direction,1,1))
 
-paired.vds <- wim.vds.pairs[wim.vds.pairs$wim_id==wim.dir[1] & wim.vds.pairs$dir==wim.dir[2],]
+paired.vds <- wim.vds.pairs[wim.vds.pairs$wim_id==wim.site & wim.vds.pairs$dir==direction,]
 if(dim(paired.vds)[1]==0){
     couch.set.state(year=year,detector.id=cdb.wimid,doc=list('paired'='none'))
 }else{
@@ -96,14 +99,14 @@ if(dim(paired.vds)[1]==0){
 }
 for(pair in paired.vds$vds_id){
     ## check if a merged file is already attached to doc. if so, then bail
-    filepath <- make.merged.filepath(pair,year,wim.wise,direction)
+    filepath <- make.merged.filepath(pair,year,wim.site,direction)
     if(couch.has.attachment(docname=pair
                             ,attachment=filepath[2])
        ) {
         next
     }
 
-    df.vds.zoo <- get.and.plot.vds.amelia(pair,year,cdb.wimid,doplots)
+    df.vds.zoo <- get.and.plot.vds.amelia(pair,year,cdb.wimid,doplots=doplots,remote=FALSE,path='/data/backup/pems')
     if(is.null(df.vds.zoo) ){
         next
     }
