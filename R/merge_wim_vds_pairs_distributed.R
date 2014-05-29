@@ -139,5 +139,3 @@ if(dim(merged.vds)[1]>0){
                     ,detector.id=cdb.wimid
                     ,doc=list('merged'='nopair'))
 }
-
-exit(0)
