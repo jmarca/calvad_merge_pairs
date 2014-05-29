@@ -140,4 +140,4 @@ if(dim(merged.vds)[1]>0){
                     ,doc=list('merged'='nopair'))
 }
 
-exit('done')
+exit(0)
