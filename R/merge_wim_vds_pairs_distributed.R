@@ -40,8 +40,8 @@ make.merged.filepath <- function(vdsid,year,wim.id,direction){
 }
 
 ## which VDS site or sites?
-wim.vds.pairs <- get.list.closest.wim.pairs()
-wim.vds.pairs$dir <- capitalize(substr(wim.vds.pairs$direction,1,1))
+##wim.vds.pairs <- get.list.closest.wim.pairs()
+##wim.vds.pairs$dir <- capitalize(substr(wim.vds.pairs$direction,1,1))
 
 ###########################
 ## process the specified wim site
@@ -90,52 +90,78 @@ if(length(df.wim.zoo) == 1 || df.wim.zoo == 1){
 ## combine WIM imputation with paired VDS imputation
 
 
-paired.vds <- wim.vds.pairs[wim.vds.pairs$wim_id==wim.site & wim.vds.pairs$dir==direction,]
-if(dim(paired.vds)[1]==0){
-    couch.set.state(year=year,detector.id=cdb.wimid,doc=list('paired'='none'))
-}else{
-    couch.set.state(year=year
-                    ,detector.id=cdb.wimid
-                    ,doc=list('paired'=paired.vds$vds_id))
+## paired.vds <- wim.vds.pairs[wim.vds.pairs$wim_id==wim.site & wim.vds.pairs$dir==direction,]
+
+nearby.vds <- get.list.regenerate.wim.pairs(wim.site
+                                            ,direction
+                                            ,samefreeway=TRUE)
+if(dim(nearby.vds)[1]==0){
+    nearby.vds  <- get.list.regenerate.wim.pairs(wim.site
+                                            ,direction
+                                            ,samefreeway=FALSE)
+
 }
+
+## get "paired" by just pulling some, and looping till we get something good
+gotgoodpair <- FALSE
+pairidx <- 1
+
+neighborslength <- dim(nearby.vds)[1]
+if(neighborslength==0){
+    couch.set.state(year=year,detector.id=cdb.wimid,doc=list('paired'='none'
+                                                        ,'neighbors'='none'))
+    gotgoodpair=TRUE
+}
+
+
+nearby.vds$dir <- capitalize(substr(nearby.vds$direction,1,1))
 merged.vds <- data.frame()
 
-for(pair in paired.vds$vds_id){
-    ## check if a merged file is already attached to doc. if so, then bail
-    filepath <- make.merged.filepath(pair,year,wim.site,direction)
-    if(couch.has.attachment(docname=pair
-                            ,attachment=filepath[2])
-       ) {
+while(!gotgoodpair && pairidx <= neighborslength ){
+    paired.vds <- nearby.vds[pairidx,]
+    pairidx <- pairidx+1
+    for(pair in paired.vds$vds_id){
+        ## check if a merged file is already attached to doc. if so,
+        ## then bail
+        filepath <- make.merged.filepath(pair,year,wim.site,direction)
+        if(couch.has.attachment(docname=pair
+                                ,attachment=filepath[2])
+           ) {
+            merged.vds[dim(merged.vds)[1]+1,'merged'] <- pair
+            next
+        }
+
+        df.vds.zoo <- get.and.plot.vds.amelia(pair,year,cdb.wimid,doplots=doplots,remote=FALSE,path='/data/backup/pems')
+        if(is.null(df.vds.zoo) ){
+            next
+        }
+        ## combine the vds zoo with the wim zoo
+        df.merged <- merge(df.vds.zoo,df.wim.zoo,all=TRUE,suffixes = c("vds","wim"))
+        ts.ts <- unclass(time(df.merged))+ISOdatetime(1970,1,1,0,0,0,tz='UTC')
+        keep.columns <-  grep( pattern="(^ts|^day|^tod|^obs_count)",x=names(df.merged),perl=TRUE,value=TRUE,invert=TRUE)
+        df.merged <- data.frame(coredata(df.merged[,keep.columns]))
+        df.merged$ts <- ts.ts
+        ts.lt <- as.POSIXlt(df.merged$ts)
+        df.merged$tod   <- ts.lt$hour + (ts.lt$min/60)
+        df.merged$day   <- ts.lt$wday
+
+        save(df.merged,file=filepath[1],compress='xz')
+        couch.attach('vdsdata%2Ftracking',pair,filepath[1], local=TRUE)
         merged.vds[dim(merged.vds)[1]+1,'merged'] <- pair
-        next
+        rm(df.merged,df.vds.zoo)
+        ## gc()
     }
-
-    df.vds.zoo <- get.and.plot.vds.amelia(pair,year,cdb.wimid,doplots=doplots,remote=FALSE,path='/data/backup/pems')
-    if(is.null(df.vds.zoo) ){
-        next
+    if(dim(merged.vds)[1]>0){
+        couch.set.state(year=year
+                        ,detector.id=cdb.wimid
+                        ,doc=list('merged'=merged.vds$merged))
+        gotgoodpair <- TRUE
     }
-    ## combine the vds zoo with the wim zoo
-    df.merged <- merge(df.vds.zoo,df.wim.zoo,all=TRUE,suffixes = c("vds","wim"))
-    ts.ts <- unclass(time(df.merged))+ISOdatetime(1970,1,1,0,0,0,tz='UTC')
-    keep.columns <-  grep( pattern="(^ts|^day|^tod|^obs_count)",x=names(df.merged),perl=TRUE,value=TRUE,invert=TRUE)
-    df.merged <- data.frame(coredata(df.merged[,keep.columns]))
-    df.merged$ts <- ts.ts
-    ts.lt <- as.POSIXlt(df.merged$ts)
-    df.merged$tod   <- ts.lt$hour + (ts.lt$min/60)
-    df.merged$day   <- ts.lt$wday
-
-    save(df.merged,file=filepath[1],compress='xz')
-    couch.attach('vdsdata%2Ftracking',pair,filepath[1], local=TRUE)
-    merged.vds[dim(merged.vds)[1]+1,'merged'] <- pair
-    rm(df.merged,df.vds.zoo)
-    ## gc()
 }
-if(dim(merged.vds)[1]>0){
+
+if(dim(merged.vds)[1]==0){
     couch.set.state(year=year
                     ,detector.id=cdb.wimid
-                    ,doc=list('merged'=merged.vds$merged))
-}else{
-    couch.set.state(year=year
-                    ,detector.id=cdb.wimid
-                    ,doc=list('merged'='nopair'))
+                    ,doc=list('merged'='nopair',
+                              'neighbors'=neighborslength))
 }
