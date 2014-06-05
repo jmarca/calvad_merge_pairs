@@ -88,10 +88,14 @@ cdb.wimid <- paste('wim',wim.site,direction,sep='.')
 
 ## get wim file
 df.wim.zoo <-get.wim.imputed(wim.site,year,direction,wim.path=wim.path)
-if(length(df.wim.zoo) == 1 || df.wim.zoo == 1){
+print(paste('got wim zoo okay, length',length(df.wim.zoo)))
+
+if( length(df.wim.zoo) == 1 ){
     print(paste("amelia run for wim not good",df.wim.zoo))
     quit('no',1)
 }
+
+print('going to fetch nearby vds')
 
 ## combine WIM imputation with paired VDS imputation
 
