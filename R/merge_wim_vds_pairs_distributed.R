@@ -50,7 +50,7 @@ make.merged.filepath <- function(vdsid,year,wim.id,direction){
 wim.path <- Sys.getenv(c('WIM_PATH'))[1]
 if(is.null(wim.path)){
   print('assign a valid direectory to the WIM_PATH environment variable')
-  exit(1)
+  quit('no',1)
 }
 
 doplots = FALSE
@@ -58,7 +58,7 @@ doplots = FALSE
 year <- as.numeric(Sys.getenv(c('RYEAR'))[1])
 if(is.null(year)){
   print('assign the year to process to the RYEAR environment variable')
-  exit(1)
+  quit('no',1)
 }
 print(year)
 
@@ -67,13 +67,13 @@ seconds <- 3600
 wim.site <- Sys.getenv(c('WIM_SITE'))[1]
 if(is.null(wim.site)){
   print('assign a valid site to the WIM_SITE environment variable')
-  exit(1)
+  quit('no',1)
 }
 
 direction <- Sys.getenv(c('WIM_DIRECTION'))[1]
 if(is.null(direction)){
   print('assign a valid direction to the WIM_DIRECTION environment variable')
-  exit(1)
+  quit('no',1)
 }
 
 ## convenience...the canonical way to id in couchdb
@@ -84,7 +84,7 @@ cdb.wimid <- paste('wim',wim.site,direction,sep='.')
 df.wim.zoo <-get.wim.imputed(wim.site,year,direction,wim.path=wim.path)
 if(length(df.wim.zoo) == 1 || df.wim.zoo == 1){
     print(paste("amelia run for wim not good",df.wim.zoo))
-    exit(1)
+    quit('no',1)
 }
 
 ## combine WIM imputation with paired VDS imputation
@@ -95,12 +95,16 @@ if(length(df.wim.zoo) == 1 || df.wim.zoo == 1){
 nearby.vds <- get.list.regenerate.wim.pairs(wim.site
                                             ,direction
                                             ,samefreeway=TRUE)
-if(dim(nearby.vds)[1]==0){
-    nearby.vds  <- get.list.regenerate.wim.pairs(wim.site
-                                            ,direction
-                                            ,samefreeway=FALSE)
+## don't do this for pairs
+## if(dim(nearby.vds)[1]==0){
+##     nearby.vds  <- get.list.regenerate.wim.pairs(wim.site
+##                                             ,direction
+##                                             ,samefreeway=FALSE)
+## }
 
-}
+## limit to 1.6km (1 mile) away for now
+nearby.vds <- nearby.vds[nearby.vds$distance<=1600,]
+print(nearby.vds)
 
 ## get "paired" by just pulling some, and looping till we get something good
 gotgoodpair <- FALSE
@@ -111,6 +115,7 @@ if(neighborslength==0){
     couch.set.state(year=year,detector.id=cdb.wimid,doc=list('paired'='none'
                                                         ,'neighbors'='none'))
     gotgoodpair=TRUE
+    q("no", 10, FALSE)
 }
 
 
