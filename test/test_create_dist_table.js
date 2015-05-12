@@ -22,6 +22,7 @@ before(function(done){
             throw new Error('node.js needs a good croak module')
         }
         config = c
+        console.log(config)
         var q = queue()
         var opts =_.extend({'year':2012},c)
         q.defer(wim_imputed,opts)
@@ -41,7 +42,7 @@ before(function(done){
 describe('query wim vds distances',function(){
     it('should get distance table for wim vds',function(done){
         create_dist_table(config,function(e,r){
-            console.log(r.slice(0,10))
+            console.log(r)
             return done()
 
         })
