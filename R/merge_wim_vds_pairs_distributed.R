@@ -1,42 +1,62 @@
-library('R.utils')
+## need node_modules directories
+dot_is <- getwd()
+node_paths <- dir(dot_is,pattern='\\.Rlibs',
+                  full.names=TRUE,recursive=TRUE,
+                  ignore.case=TRUE,include.dirs=TRUE,
+                  all.files = TRUE)
+path <- normalizePath(node_paths, winslash = "/", mustWork = FALSE)
+lib_paths <- .libPaths()
+.libPaths(c(path, lib_paths))
+
+print(.libPaths())
+
+## need env for test file
+config_file <- Sys.getenv('R_CONFIG')
+
+if(config_file ==  ''){
+    config_file <- 'config.json'
+}
+print(paste ('using config file =',config_file))
+config <- rcouchutils::get.config(config_file)
+db <- config$couchdb$trackingdb
+
+## pass it the raw data details, and either the raw data will get
+## loaded and parsed and saved as a dataframe, or else the existing
+## dataframe will get loaded.  In either case, the plots will get made
+## and saved to couchdb
+
+
 library('RPostgreSQL')
 m <- dbDriver("PostgreSQL")
-
-## requires environment variables be set externally
-psqlenv = Sys.getenv(c("PSQL_HOST", "PSQL_USER", "PSQL_PASS"))
-
 con <-  dbConnect(m
-                  ,user=psqlenv[2]
-                  ,password=psqlenv[3]
-                  ,host=psqlenv[1]
-                  ,dbname="spatialvds")
-
-source('../components/jmarca-rstats_couch_utils/couchUtils.R',chdir=TRUE)
-source('../components/jmarca-calvad_rscripts/lib/process.wim.site.R',chdir=TRUE)
-source('get.wim.R')
+                  ,user=config$postgresql$auth$username
+                  ,host=config$postgresql$host
+                  ,dbname=config$postgresql$db)
 
 
 couch.set.wim.paired.state <- function(year,wim.site,direction,state,local=TRUE){
-  couch.set.state(year=year,detector.id=paste('wim',wim.site,direction,sep='.'),doc=list('paired'=state),local=local)
+    couch.set.state(year=year,
+                    detector.id=paste('wim',wim.site,direction,sep='.'),
+                    doc=list('paired'=state)
+                    db=db)
 }
 
 
-## for plotting scatter plots
-pf <- function(x,y){panel.smoothScatter(x,y,nbin=c(200,200))}
-day.of.week <- c('Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday')
-lane.defs <- c('left lane','right lane 1', 'right lane 2', 'right lane 3', 'right lane 4', 'right lane 5', 'right lane 6', 'right lane 7', 'right lane 8')
-
-
 make.merged.filepath <- function(vdsid,year,wim.id,direction){
-  savepath <- paste(wim.path,year,sep='/')
-  if(!file.exists(savepath)){dir.create(savepath)}
-  savepath <- paste(savepath,wim.id,sep='/')
-  if(!file.exists(savepath)){dir.create(savepath)}
-  savepath <- paste(savepath,direction,sep='/')
-  if(!file.exists(savepath)){dir.create(savepath)}
-  filename <- paste('wim',wim.id,direction,'vdsid',vdsid,year,'paired','RData',sep='.')
-  filepath <- paste(savepath,filename,sep='/')
-  return (c(filepath,filename))
+    savepath <- paste(wim.path,year,sep='/')
+    if(!file.exists(savepath)){dir.create(savepath)}
+    savepath <- paste(savepath,wim.id,sep='/')
+    if(!file.exists(savepath)){dir.create(savepath)}
+    savepath <- paste(savepath,direction,sep='/')
+    if(!file.exists(savepath)){dir.create(savepath)}
+    filename <- paste('wim',wim.id,direction,
+                      'vdsid',vdsid,
+                      year,
+                      'paired',
+                      'RData',
+                      sep='.')
+    filepath <- paste(savepath,filename,sep='/')
+    return (c(filepath,filename))
 }
 
 ## which VDS site or sites?
@@ -87,7 +107,7 @@ cdb.wimid <- paste('wim',wim.site,direction,sep='.')
 
 
 ## get wim file
-df.wim.zoo <-get.wim.imputed(wim.site,year,direction,wim.path=wim.path)
+df.wim.imputed <- get.wim.imputed(wim.site,year,direction,wim.path=wim.path)
 print(paste('got wim zoo okay, length',length(df.wim.zoo)))
 
 if( length(df.wim.zoo) == 1 ){

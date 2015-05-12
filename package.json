@@ -1,15 +1,20 @@
 {
   "name": "calvad_merge_pairs",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "merge vds and wim pairs",
   "main": "lib/trigger_merge_pairs.js",
   "dependencies": {
+    "calvad_vds_sites": "git://github.com/jmarca/calvad_vds_sites",
     "calvad_wim_sites": "git://github.com/jmarca/calvad_wim_sites",
-    "async": "^0.9.0",
-    "lodash": "^2.4.1",
-    "couch_check_state": "git://github.com/jmarca/couch_check_state"
+    "config_okay": "0.0.3",
+    "couch_check_state": "git://github.com/jmarca/couch_check_state",
+    "lodash": "",
+    "pg": "^4.3.0",
+    "queue-async": "^1.0.7"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "should": "^6.0.1"
+  },
   "scripts": {
     "test": "mocha"
   },
