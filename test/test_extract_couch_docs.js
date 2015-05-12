@@ -51,7 +51,7 @@ before(function(done){
 describe('extract wim and wim_dir',function(){
     it('should extract the WIM sites from couch docs',function(done){
         var sites = extract_couch_docs.extract_wim_sites(wim_sites)
-        sites.should.be.instanceOf(Array).and.have.lengthOf(140)
+        sites.should.be.instanceOf(Array).and.have.lengthOf(97)
         sites.forEach(function(s){
             s.should.be.a.Number
             return null

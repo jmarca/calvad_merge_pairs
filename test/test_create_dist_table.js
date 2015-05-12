@@ -22,9 +22,8 @@ before(function(done){
             throw new Error('node.js needs a good croak module')
         }
         config = c
-        console.log(c.couchdb)
         var q = queue()
-        var opts =_.extend({'year':2012},c.couchdb)
+        var opts =_.extend({'year':2012},c)
         q.defer(wim_imputed,opts)
         q.defer(vds_imputed,opts)
         q.await(function(e,w,v){
