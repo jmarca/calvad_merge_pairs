@@ -44,22 +44,6 @@ couch.set.wim.paired.state <- function(year,wim.site,direction,state,local=TRUE)
 }
 
 
-make.merged.filepath <- function(vdsid,year,wim.id,direction){
-    savepath <- paste(wim.path,year,sep='/')
-    if(!file.exists(savepath)){dir.create(savepath)}
-    savepath <- paste(savepath,wim.id,sep='/')
-    if(!file.exists(savepath)){dir.create(savepath)}
-    savepath <- paste(savepath,direction,sep='/')
-    if(!file.exists(savepath)){dir.create(savepath)}
-    filename <- paste('wim',wim.id,direction,
-                      'vdsid',vdsid,
-                      year,
-                      'paired',
-                      'RData',
-                      sep='.')
-    filepath <- paste(savepath,filename,sep='/')
-    return (c(filepath,filename))
-}
 
 ## which VDS site or sites?
 ##wim.vds.pairs <- get.list.closest.wim.pairs()
@@ -227,24 +211,23 @@ while(gotgoodpair < targetpair && pairidx <= neighborslength ){
     print(summary(df.vds.merged))
 
     df.merged <- merge(df.vds.merged, df.wim.merged,
-                       all=TRUE,
+                       all=FALSE,
                        suffixes = c("vds","wim"))
 
-    print(summary(df.merged))
-    print(names(df.merged))
+    ## entering all=FALSE above truncates the non-overlap
 
-    ## have to truncate non-overlap.
-    ## that is, if the times do not overlap, then take the minimum of the two.
-    ## perhaps that is what merge would do if I dropped the "all=TRUE" thing?
+    ## save to filesystem for great justice and backups
+    save(df.merged,file=filepath[1],compress='xz')
 
+    ## attach to couchdb for convenience of use
+    rcouchutils::couch.attach(db,vds.id,filepath[1], local=TRUE)
 
-        save(df.merged,file=filepath[1],compress='xz')
-        rcouchutils::couch.attach('vdsdata%2Ftracking',vds.id,filepath[1], local=TRUE)
-        merged.vds[dim(merged.vds)[1]+1,'merged'] <- vds.id
-        rm(df.merged,df.vds.zoo)
-        ## gc()
+    ## record keeping of successful merged pairs
+    merged.vds[dim(merged.vds)[1]+1,'merged'] <- vds.id
+    rm(df.merged,df.vds.merged)
 
 }
+
 if(dim(merged.vds)[1]>0){
     couch.set.state(year=year
                    ,detector.id=cdb.wimid
