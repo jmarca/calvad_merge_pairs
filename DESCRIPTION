@@ -1,8 +1,9 @@
-Package: calvad_merge_pairs
-Title: Merge wim and vds pairs into a single RData, What the package does (short line)
-Version: 0.1
-Authors@R: "James Marca <james@activimetrics.com> [aut, cre]"
-Description: This package merges wim and vds pairs for CalVAD
-Depends: R (>= 3.0.3)
-License: GPL V2
+Package: calvadmergepairs
+Title: R and node.js to merge wim-vds pairs
+Version: 1.0.1
+Authors@R: as.person(c("James Marca <jmarca@translab.its.uci.edu> [aut, cre]"))
+Description: This package contains node and R necessary to merge wim-vds pairs.
+Depends: R (>= 3.1.1)
+License: GPL-2
 LazyData: true
+Suggests: testthat

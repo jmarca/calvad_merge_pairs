@@ -6,19 +6,20 @@
 ##' @param year the year
 ##' @param wim.site the WIM site number
 ##' @param direction the direction of flow at the WIM site
+##' @param rootpath the root directory for saving files
 ##' @return a vector with two values.  The first value is the path
 ##' where the merged pair data should be written, the second value is
 ##' the appropriate filename.
 ##' @author James E. Marca
 ##' @export
-make.merged.filepath <- function(vdsid,year,wim.site,direction){
-    savepath <- paste(wim.path,year,sep='/')
+make.merged.filepath <- function(vdsid,year,wim.site,direction,rootpath){
+    savepath <- paste(rootpath,year,sep='/')
     if(!file.exists(savepath)){dir.create(savepath)}
-    savepath <- paste(savepath,wim.id,sep='/')
+    savepath <- paste(savepath,wim.site,sep='/')
     if(!file.exists(savepath)){dir.create(savepath)}
     savepath <- paste(savepath,direction,sep='/')
     if(!file.exists(savepath)){dir.create(savepath)}
-    filename <- paste('wim',wim.id,direction,
+    filename <- paste('wim',wim.site,direction,
                       'vdsid',vdsid,
                       year,
                       'paired',
@@ -44,8 +45,8 @@ make.merged.filepath <- function(vdsid,year,wim.site,direction){
 ##' @author James E. Marca
 ##' @export
 couch.has.merged.pair <- function(trackingdb,vds.id,wim.site,direction,year){
-    filepath <- make.merged.filepath(vds.id,year,wim.site,direction)
-    have_one <- rcouchutils::couch.has.attachment(db=db
+    filepath <- make.merged.filepath(vds.id,year,wim.site,direction,'.')
+    have_one <- rcouchutils::couch.has.attachment(db=trackingdb
                                                  ,docname=vds.id
                                                  ,attachment=filepath[2])
     return (have_one)
@@ -64,10 +65,13 @@ couch.has.merged.pair <- function(trackingdb,vds.id,wim.site,direction,year){
 ##' @author James E. Marca
 ##' @export
 couch.get.merged.pair <- function(trackingdb,vds.id,wim.site,direction,year){
-    filepath <- make.merged.filepath(vds.id,year,wim.site,direction)
-    rcouchutils::couch.get.attachment(db=trackingdb
-                                     ,docname=vds.id
-                                     ,attachment=filepath[2])
+    filepath <- make.merged.filepath(vds.id,year,wim.site,direction,'.')
+    res <- rcouchutils::couch.get.attachment(db=trackingdb
+                                            ,docname=vds.id
+                                            ,attachment=filepath[2])
+    varnames <- names(res)
+    barfl <- res[[1]][[varnames[1]]]
+    return(barfl)
 }
 
 ##' put the merged data as a couchdb attachment.  The dataframe *must*
@@ -101,8 +105,9 @@ couch.put.merged.pair <- function(trackingdb,vds.id,file){
 ##' The data are not merged using any sort of imputation code.
 ##'
 ##' @title merge_wim_with_vds
-##' @param wim.df A valid WIM dataframe containing the output of the
-##' WIM self-imputation process, with just one entry per timestamp
+##' @param df.wim.merged A valid WIM dataframe containing the output
+##' of the WIM self-imputation process, with just one entry per
+##' timestamp
 ##' @param wim.site The WIM site number
 ##' @param direction The directon of flow at the WIM site
 ##' @param vds.id The VDS id for the site's imputation output you want
@@ -122,7 +127,7 @@ couch.put.merged.pair <- function(trackingdb,vds.id,file){
 ##' just cover June to August.
 ##' @author James E. Marca
 ##' @export
-merge_wim_with_vds <- function(wim.df,
+merge_wim_with_vds <- function(df.wim.merged,
                                wim.site,
                                direction,
                                vds.id,
@@ -130,29 +135,16 @@ merge_wim_with_vds <- function(wim.df,
                                path,
                                trackingdb){
 
-    have_one <- rcouchutils::couch.has.attachment(db=db
-                                                 ,docname=vds.id
-                                                 ,attachment=filepath[2])
-    if(have_one) {
-        merged.vds[dim(merged.vds)[1]+1,'merged'] <- vds.id
-        gotgoodpair <- gotgoodpair + 1
-        next
-    }
 
-    filepath <- make.merged.filepath(vds.id,year,wim.site,direction)
-
-    print(paste('loading',vds.id,'from',vds.path))
+    print(paste('loading',vds.id,'from',path))
     df.vds.merged <- calvadrscripts::get.and.plot.vds.amelia(
         pair=vds.id,
         year=year,
         doplots=FALSE,
         remote=FALSE,
-        path=vds.path,
+        path=path,
         force.plot=FALSE,
-        trackingdb=db)
-
-
-    print(summary(df.vds.merged))
+        trackingdb=trackingdb)
 
     df.merged <- merge(df.vds.merged, df.wim.merged,
                        all=FALSE,

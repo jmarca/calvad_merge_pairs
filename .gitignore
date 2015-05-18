@@ -1,7 +1,10 @@
-/components/
-/.Rhistory
+**/.Rhistory
+**/.RData
 /config.json
 /test.config.json
 *~
 **/node_modules
 **/.Rhistory
+**/.cookies.txt
+log
+man

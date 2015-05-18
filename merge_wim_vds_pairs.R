@@ -1,5 +1,4 @@
 ## need node_modules directories
-setwd('..')
 dot_is <- getwd()
 node_paths <- dir(dot_is,pattern='\\.Rlibs',
                   full.names=TRUE,recursive=TRUE,
@@ -8,7 +7,7 @@ node_paths <- dir(dot_is,pattern='\\.Rlibs',
 path <- normalizePath(node_paths, winslash = "/", mustWork = FALSE)
 lib_paths <- .libPaths()
 .libPaths(c(path, lib_paths))
-
+nn
 print(path)
 print(.libPaths())
 
@@ -21,29 +20,6 @@ if(config_file ==  ''){
 print(paste ('using config file =',config_file))
 config <- rcouchutils::get.config(config_file)
 db <- config$couchdb$trackingdb
-
-## pass it the raw data details, and either the raw data will get
-## loaded and parsed and saved as a dataframe, or else the existing
-## dataframe will get loaded.  In either case, the plots will get made
-## and saved to couchdb
-
-
-library('RPostgreSQL')
-m <- dbDriver("PostgreSQL")
-con <-  dbConnect(m
-                  ,user=config$postgresql$auth$username
-                  ,host=config$postgresql$host
-                  ,dbname=config$postgresql$db)
-
-
-couch.set.wim.paired.state <- function(year,wim.site,direction,state,local=TRUE){
-    couch.set.state(year=year,
-                    detector.id=paste('wim',wim.site,direction,sep='.'),
-                    doc=list('paired'=state),
-                    db=db)
-}
-
-
 
 ## which VDS site or sites?
 ##wim.vds.pairs <- get.list.closest.wim.pairs()
@@ -149,7 +125,7 @@ if( length(df.wim.imputed) == 1 ){
 
 df.wim.merged <- calvadrscripts::condense.amelia.output(df.wim.imputed)
 
-print(summary(df.wim.merged))
+
 ## get "paired" by stepping down the vdsids list until we get
 ## something good
 
@@ -186,45 +162,34 @@ while(gotgoodpair < targetpair && pairidx <= neighborslength ){
     pairidx <- pairidx+1
         ## check if a merged file is already attached to doc. if so,
         ## then bail
-    filepath <- make.merged.filepath(vds.id,year,wim.site,direction)
-    print(filepath)
-    have_one <- rcouchutils::couch.has.attachment(db=db
-                                                 ,docname=vds.id
-                                                 ,attachment=filepath[2])
+    have_one <- couch.has.merged.pair(trackingdb=db
+                                     ,vds.id=vds.id
+                                     ,wim.site=wim.site
+                                     ,direction=direction
+                                     ,year=year)
     if(have_one) {
         merged.vds[dim(merged.vds)[1]+1,'merged'] <- vds.id
-        gotgoodpair <- gotgoodpair + 1
         next
     }
-
-    print(paste('loading',vds.id,'from',vds.path))
-    df.vds.merged <- calvadrscripts::get.and.plot.vds.amelia(
-        pair=vds.id,
-        year=year,
-        doplots=FALSE,
-        remote=FALSE,
-        path=vds.path,
-        force.plot=FALSE,
-        trackingdb=db)
-
-
-    print(summary(df.vds.merged))
-
-    df.merged <- merge(df.vds.merged, df.wim.merged,
-                       all=FALSE,
-                       suffixes = c("vds","wim"))
-
-    ## entering all=FALSE above truncates the non-overlap
+    df.merged <- merge_wim_with_vds(wim.df=df.wim.merged
+                                ,wim.site=wim.site
+                                ,direction=direction
+                                ,vds.id=vds.id
+                                ,path=vds.path
+                                ,year=year
+                                ,trackingdb=db
+                                 )
 
     ## save to filesystem for great justice and backups
+    filepath <- make.merged.filepath(vds.id,year,wim.site,direction,wim.path)
     save(df.merged,file=filepath[1],compress='xz')
 
     ## attach to couchdb for convenience of use
-    rcouchutils::couch.attach(db,vds.id,filepath[1], local=TRUE)
+    couch.put.merged.pair(trackingdb=db,
+                          vds.id=vds.id,
+                          attfile=filepath[1])
 
-    ## record keeping of successful merged pairs
     merged.vds[dim(merged.vds)[1]+1,'merged'] <- vds.id
-    rm(df.merged,df.vds.merged)
 
 }
 
