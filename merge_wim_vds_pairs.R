@@ -7,9 +7,11 @@ node_paths <- dir(dot_is,pattern='\\.Rlibs',
 path <- normalizePath(node_paths, winslash = "/", mustWork = FALSE)
 lib_paths <- .libPaths()
 .libPaths(c(path, lib_paths))
-nn
 print(path)
 print(.libPaths())
+
+pkg <- devtools::as.package('.')
+ns_env <- devtools::load_all(pkg,quiet = TRUE)$env
 
 ## need env for test file
 config_file <- Sys.getenv('R_CONFIG')
@@ -171,7 +173,7 @@ while(gotgoodpair < targetpair && pairidx <= neighborslength ){
         merged.vds[dim(merged.vds)[1]+1,'merged'] <- vds.id
         next
     }
-    df.merged <- merge_wim_with_vds(wim.df=df.wim.merged
+    df.merged <- merge_wim_with_vds(df.wim.merged=df.wim.merged
                                 ,wim.site=wim.site
                                 ,direction=direction
                                 ,vds.id=vds.id
@@ -187,7 +189,7 @@ while(gotgoodpair < targetpair && pairidx <= neighborslength ){
     ## attach to couchdb for convenience of use
     couch.put.merged.pair(trackingdb=db,
                           vds.id=vds.id,
-                          attfile=filepath[1])
+                          file=filepath[1])
 
     merged.vds[dim(merged.vds)[1]+1,'merged'] <- vds.id
 
