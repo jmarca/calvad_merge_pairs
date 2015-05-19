@@ -73,7 +73,6 @@ if(is.null(vds.path) || '' == vds.path){
 
 print(paste('vds.path <-',vds.path))
 
-
 year <- as.numeric(Sys.getenv(c('RYEAR'))[1])
 if(is.null(year)){
   print('assign the year to process to the RYEAR environment variable')
@@ -149,9 +148,12 @@ print(paste('targetpair <-',targetpair))
 pairidx <- 1
 neighborslength <- length(vds.ids[,1])
 if(neighborslength==0){
-    couch.set.state(year=year,detector.id=cdb.wimid,
-                    doc=list('paired'='none'
-                       ,'neighbors'='none'))
+    rcouchutils::couch.set.state(year=year,
+                                 id=cdb.wimid,
+                                 doc=list(
+                                     'paired'='none'
+                                    ,'neighbors'='none'),
+                                 db=db)
     q("no", 10, FALSE)
 }
 
@@ -159,8 +161,9 @@ if(neighborslength==0){
 merged.vds <- data.frame()
 
 print('looping to load a good vds site and pair it')
-while(gotgoodpair < targetpair && pairidx <= neighborslength ){
+while(length(merged.vds) < targetpair && pairidx <= neighborslength ){
     vds.id <- vds.ids[pairidx,1]
+    print(paste('vds.id <-',vds.id))
     pairidx <- pairidx+1
         ## check if a merged file is already attached to doc. if so,
         ## then bail
@@ -170,6 +173,7 @@ while(gotgoodpair < targetpair && pairidx <= neighborslength ){
                                      ,direction=direction
                                      ,year=year)
     if(have_one) {
+        print('already paired')
         merged.vds[dim(merged.vds)[1]+1,'merged'] <- vds.id
         next
     }
@@ -181,6 +185,13 @@ while(gotgoodpair < targetpair && pairidx <= neighborslength ){
                                 ,year=year
                                 ,trackingdb=db
                                  )
+
+    print(paste("dim(df.merged) <-", paste(dim(df.merged),collapse=',')))
+    print(paste("dim(df.wim.merged) <-", paste(dim(df.wim.merged),collapse=',')))
+    all_the_hours <- plyr::count(df.merged$ts)
+    for(i in 1:length(all_the_hours)){
+        testthat::expect_that(all_the_hours[i,2],testthat::equals(1))
+    }
 
     ## save to filesystem for great justice and backups
     filepath <- make.merged.filepath(vds.id,year,wim.site,direction,wim.path)
@@ -196,13 +207,17 @@ while(gotgoodpair < targetpair && pairidx <= neighborslength ){
 }
 
 if(dim(merged.vds)[1]>0){
-    couch.set.state(year=year
-                   ,detector.id=cdb.wimid
-                   ,doc=list('merged'=merged.vds$merged))
+    res <- rcouchutils::couch.set.state(year=year,
+                                        id=cdb.wimid,
+                                        doc=list('merged'=merged.vds$merged),
+                                        db=db)
 
 }else{
-    couch.set.state(year=year
-                   ,detector.id=cdb.wimid
-                   ,doc=list('merged'='nopair',
-                        'neighbors'=neighborslength))
+    res <- rcouchutils::couch.set.state(year=year,
+                                        id=cdb.wimid,
+                                        doc=list('merged'='nopair',
+                                            'neighbors'=neighborslength),
+                                        db=db)
 }
+
+quit('no',10)

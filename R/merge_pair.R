@@ -146,6 +146,8 @@ merge_wim_with_vds <- function(df.wim.merged,
         force.plot=FALSE,
         trackingdb=trackingdb)
 
+    print(paste("dim(df.vds.merged) <- (", paste(dim(df.vds.merged),collapse=','),')'))
+
     df.merged <- merge(df.vds.merged, df.wim.merged,
                        all=FALSE,
                        suffixes = c("vds","wim"))
