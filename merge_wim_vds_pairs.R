@@ -186,8 +186,13 @@ while(length(merged.vds) < targetpair && pairidx <= neighborslength ){
                                 ,trackingdb=db
                                  )
 
-    print(paste("dim(df.merged) <-", paste(dim(df.merged),collapse=',')))
     print(paste("dim(df.wim.merged) <-", paste(dim(df.wim.merged),collapse=',')))
+    print(paste("dim(df.merged) <-", paste(dim(df.merged),collapse=',')))
+    if(dim(df.merged)[1] == 0){
+        print("no overlap, try the next one")
+        next
+    }
+
     all_the_hours <- plyr::count(df.merged$ts)
     for(i in 1:length(all_the_hours)){
         testthat::expect_that(all_the_hours[i,2],testthat::equals(1))
