@@ -1,0 +1,15 @@
+RData$
+.*cookies\.txt$
+node_modules.*
+^package\.json$
+^test$
+^test\.config\.json
+^config\.json
+.*cookies\.txt$
+node_modules$
+^Rtest\.R$
+^Rinstall\.R$
+merge_wim_vds_pairs.R
+todo.md
+lib
+log
