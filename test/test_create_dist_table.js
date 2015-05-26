@@ -42,6 +42,8 @@ before(function(done){
 describe('query wim vds distances',function(){
     it('should get distance table for wim vds',function(done){
         create_dist_table(config,function(e,r){
+            should.not.exist(e)
+            should.exist(r)
             var numrecords = Object.keys(r).length
             numrecords.should.equal(117)
             var check_queue = queue(5)
