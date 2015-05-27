@@ -3,5 +3,6 @@
 export(couch.get.merged.pair)
 export(couch.has.merged.pair)
 export(couch.put.merged.pair)
+export(load.wim.pair.data)
 export(make.merged.filepath)
 export(merge_wim_with_vds)
