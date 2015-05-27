@@ -174,10 +174,14 @@ merge_wim_with_vds <- function(df.wim.merged,
 ##' the wim variabes (*hh, *weight,*axle, and *speed variables, see
 ##' the code for the exact), and other.vars are other variables
 ##' @author James E. Marca
-evaluate.paired.data <- function(df,wim.lanes,vds.lanes){
+evaluate.paired.data <- function(df,wim.lanes=0,vds.lanes){
     paired.data.names <- names(df)
 
-
+    if(wim.lanes == 0){
+        print('guessing wim lanes')
+        wim.lanes <- calvadrscripts::longway.guess.lanes(df)
+        print(wim.lanes)
+    }
     wim.var.pattern <-
         "(heavyheavy|_weight|_axle|_len|_speed)"
     ## "(heavyheavy|_weight|_axle|_len|_speed|_all_veh_speed)"
