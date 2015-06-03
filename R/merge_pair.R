@@ -182,7 +182,9 @@ merge_wim_with_vds <- function(df.wim.merged,
 evaluate.paired.data <- function(df,vds.names){
     lanes_paired <- calvadrscripts::extract_unique_lanes(df)
     lanes_vds <- calvadrscripts::extract_unique_lanes(vds.names)
-
+    if(is.null(lanes_vds)){
+        stop(paste('no vds lanes detected in passed vds.names:',vds.names))
+    }
     ## now make those the same as best as I can by dropping from df.
     ## I can't *add* to the paired data frame though, so it is a
     ## one-way fixing operation

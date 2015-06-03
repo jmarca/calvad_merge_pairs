@@ -28,7 +28,6 @@ test_that(
     expect_that(bigdata,is_a('data.frame'))
 
     expect_that(dim(bigdata),equals(c(8724,49)))
-    ##print(names(bigdata))
     wim.pairs[[2]] <- list(vds_id=318383,wim_site=51,direction='E')
     bigdata <- load.wim.pair.data(wim.pairs=wim.pairs,
                                   vds.nvars=c('nl1','nr3','nr2','nr1'),
