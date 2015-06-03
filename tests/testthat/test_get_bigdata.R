@@ -27,7 +27,7 @@ test_that(
 
     expect_that(bigdata,is_a('data.frame'))
 
-    expect_that(dim(bigdata),equals(c(8724,49)))
+    expect_that(dim(bigdata),equals(c(8724,51)))
     wim.pairs[[2]] <- list(vds_id=318383,wim_site=51,direction='E')
     bigdata <- load.wim.pair.data(wim.pairs=wim.pairs,
                                   vds.nvars=c('nl1','nr3','nr2','nr1'),
@@ -37,7 +37,7 @@ test_that(
 
     expect_that(bigdata,is_a('data.frame'))
 
-    expect_that(dim(bigdata),equals(c(10544,49)))
+    expect_that(dim(bigdata),equals(c(10544,51)))
     expect_that(sort(unique(bigdata$vds_id)),equals(c(313822,318383)))
 
     context("just two lanes at vds site")
@@ -48,30 +48,35 @@ test_that(
                                   )
 
     expect_that(bigdata,is_a('data.frame'))
-    expect_that(dim(bigdata),equals(c(10544,21)))
+    expect_that(dim(bigdata),equals(c(10544,33)))
     expect_that(sort(names(bigdata)),
                 equals(
                     c(
-                        count_all_veh_speed_r1,
-                        day,
-                        heavyheavy_r1,
-                        hh_axles_r1,
-                        hh_len_r1,
-                        hh_speed_r1,
-                        hh_weight_r1,
-                        nh_axles_r1,
-                        nh_len_r1,
-                        nh_speed_r1,
-                        nh_weight_r1,
-                        nl1, not_heavyheavy_r1,
-                        nr1,
-                        obs_count,
-                        ol1,
-                        or1,
-                        tod, ts, vds_id,
-                        wgt_spd_all_veh_speed_r1
+                        'count_all_veh_speed_l1',
+                        'count_all_veh_speed_r1',
+                        'day',
+                        'heavyheavy_l1','heavyheavy_r1',
+                        'hh_axles_l1',  'hh_axles_r1',
+                        'hh_len_l1',    'hh_len_r1',
+                        'hh_speed_l1',  'hh_speed_r1',
+                        'hh_weight_l1', 'hh_weight_r1',
+                        'nh_axles_l1',  'nh_axles_r1',
+                        'nh_len_l1',    'nh_len_r1',
+                        'nh_speed_l1',  'nh_speed_r1',
+                        'nh_weight_l1', 'nh_weight_r1',
+                        'nl1',
+                        'not_heavyheavy_l1',
+                        'not_heavyheavy_r1',
+                        'nr1',
+                        'obs_count',
+                        'ol1',
+                        'or1',
+                        'tod', 'ts', 'vds_id',
+                        'wgt_spd_all_veh_speed_l1',
+                        'wgt_spd_all_veh_speed_r1'
                     )
                 ))
+
     expect_that(sort(unique(bigdata$vds_id)),equals(c(313822,318383)))
 
 })
