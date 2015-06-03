@@ -166,81 +166,101 @@ merge_wim_with_vds <- function(df.wim.merged,
 ##'
 ##' @title evaluate.paired.data
 ##' @param df the data frame with paired data
-##' @param wim.lanes lanes at the WIM site
-##' @param vds.lanes lanes at the VDS site
+##' @param vds.names names of vds dataframe, or minimal set of names
+##'     that will generate accurate list of actual lanes at the VDS
+##'     site
+##'
 ##' @return a dataframe that equals
-##' df[,c(vds.vars.lanes,wim.vars.lanes,other.vars)] where
-##' vds.vars.lanes is the vds variables (vol, occ), wim.vars.lanes is
-##' the wim variabes (*hh, *weight,*axle, and *speed variables, see
-##' the code for the exact), and other.vars are other variables
+##'     df[,c(vds.vars.lanes,wim.vars.lanes,other.vars)] where
+##'     vds.vars.lanes is the vds variables (vol, occ), wim.vars.lanes
+##'     is the wim variabes (*hh, *weight,*axle, and *speed variables,
+##'     see the code for the exact), and other.vars are other
+##'     variables
+##'
 ##' @author James E. Marca
-evaluate.paired.data <- function(df,wim.lanes=0,vds.lanes){
-    paired.data.names <- names(df)
+##'
+evaluate.paired.data <- function(df,vds.names){
+    lanes_paired <- calvadrscripts::extract_unique_lanes(df)
+    lanes_vds <- calvadrscripts::extract_unique_lanes(vds.names)
 
-    if(wim.lanes == 0){
-        print('guessing wim lanes')
-        wim.lanes <- calvadrscripts::longway.guess.lanes(df)
-        print(wim.lanes)
+    ## now make those the same as best as I can by dropping from df.
+    ## I can't *add* to the paired data frame though, so it is a
+    ## one-way fixing operation
+
+    laned_pattern <- paste(lanes_paired,'$',sep='',collapse='|')
+
+    unlaned_vars <- grep(pattern=laned_pattern,x=names(df),
+                         perl=TRUE,value=TRUE,invert=TRUE)
+
+    vds_laned_pattern <- paste(lanes_vds,'$',sep='',collapse='|')
+    laned_vars <- grep(pattern=vds_laned_pattern,x=names(df),
+                       perl=TRUE,value=TRUE)
+    keep_names <- c(laned_vars,unlaned_vars)
+
+    trimmed_df <- df[,keep_names]
+    names(trimmed_df)
+    ## special case handling
+
+    ## if the VDS site has just two lanes, and the paired site has
+    ## more than two lanes, then the left lane at the paired site is
+    ## unlikely to have truck variables in it, other than VDS data
+    ## from the pairing.
+    ##
+    ## In that case, I *want* to have trucks in the left lane, as they
+    ## are legally allowed there etc etc, whereas in the
+    ## more-than-two-lanes original site they are not allowed in the
+    ## left lane.  So, what the next bit of code does is to check
+    ## first that there are 2 lanes at the VDS site, and that there
+    ## are more than two lanes at the truck site.  Then it copies the
+    ## truck variables into the trimmed_df, renaming the lane part
+    ## from _r2 to _l1
+
+    ## do this only if lanes at vds === 2
+    if(length(lanes_vds) == 2){
+        ## some contortions to drop "vds" lanes from the paired data
+        ## so that I can have just the WIM laned data
+        varnames <-  names(df)
+        nhh_pattern <- 'not_heavyheavy'
+        df_laned_vars <- grep(pattern=nhh_pattern,x=varnames,
+                              perl=TRUE,value=TRUE,invert=FALSE)
+        ## now, in the wim-only laned variables, are there more than 2 lanes?
+        wim_unique_lanes <- calvadrscripts::extract_unique_lanes(df_laned_vars)
+        if(length(wim_unique_lanes)>1){
+            print(paste('just two lanes in target vds data'
+                       ,'and more than one lane in WIM data in merged set. '
+                       ,'Re-using second lane from right at WIM site as'
+                       ,'artificial left lane at paired VDS site'
+                       ,sep=' '))
+            ## okay, have something to do
+            ## extract all wim data from lane r2
+
+            ## get a list of laned variable names from trimmed_df in
+            ## right lane only
+            wim_right_lane2_pattern <- '_r2' ## only WIM data uses the _
+            wim_right_lane2_vars <- grep(pattern=wim_right_lane2_pattern,
+                                        x=names(df),
+                                        perl=TRUE,value=TRUE,invert=FALSE)
+            ## grab the rightlane2 WIM data from the merged wim/vds site
+            df_wim_right <- df[,c(wim_right_lane2_vars,unlaned_vars)]
+            rename_r2_l1 <- sub(pattern='_r2$',replacement='_l1',
+                                x=names(df_wim_right),
+                                perl=TRUE)
+            ## do the rename
+            names(df_wim_right) <- rename_r2_l1
+
+            ## exclude those that already exist, which pretty much
+            ## only means wgt_spd_all_veh_speed_l1 and
+            ## count_all_veh_speed_l1 if those are already in the
+            ## trimmed_df data.frame
+            non_overlapping_l1 <- setdiff(rename_r2_l1,names(trimmed_df))
+            expanded_df <- merge(trimmed_df,
+                                 df_wim_right[,c(unlaned_vars,
+                                                 non_overlapping_l1)],
+                                 all=TRUE)
+            trimmed_df <- expanded_df
+
+        }
     }
-    wim.var.pattern <-
-        "(heavyheavy|_weight|_axle|_len|_speed)"
-    ## "(heavyheavy|_weight|_axle|_len|_speed|_all_veh_speed)"
 
-    wim.vars <- grep(pattern=wim.var.pattern,x=paired.data.names
-                     ,perl=TRUE,value=TRUE)
-    other.vars <- grep(pattern=wim.var.pattern,x=paired.data.names
-                       ,perl=TRUE,value=TRUE,invert=TRUE)
-    lanes.vars <- c()
-    for(lane in 1:wim.lanes){
-        lane.pattern <- paste("r",lane,sep='')
-        lane.vars <- grep(pattern=lane.pattern,x=wim.vars
-                          ,perl=TRUE,value=TRUE)
-        lanes.vars <- c(lanes.vars,lane.vars)
-    }
-    wim.vars.lanes <- lanes.vars
-
-
-    vds.var.pattern <- "(^nl|^nr\\d|^ol|^or\\d)"
-    vds.vars <- grep(pattern=vds.var.pattern,x=paired.data.names
-                     ,perl=TRUE,value=TRUE)
-    other.vars <- grep(pattern=vds.var.pattern,x=other.vars
-                       ,perl=TRUE,value=TRUE,invert=TRUE)
-
-    ## expect_that(sort(c(other.vars
-    ##                    ,vds.vars,wim.vars))
-    ##             ,equals(sort(paired.data.names)))
-    ## passed in testing
-
-    ## reset
-    lanes.vars <- c()
-
-    ## need to process lanes right and left lane separately right lane
-    ## is numbered from the right as r1 to r(n-1).  The left lane is
-    ## always numbered l1.  If a site has one lane, that lane, by
-    ## definition, is r1.  If a site has two lanes, the lanes are r1
-    ## and l1, again, by definition.  If a site has three lanes, (n=3)
-    ## then the left lane is l1, and the other lanes are numbered r1
-    ## and r2, AKA r(n-1)
-
-    ## so special case is n=1 (right lane only)
-    right.lanes <- vds.lanes
-    if(vds.lanes>1){
-        ## there *is* a left lane for all cases when n>1
-        right.lanes <- vds.lanes-1
-        lane.pattern <- "l1"
-        lane.vars <- grep(pattern=lane.pattern,x=vds.vars
-                          ,perl=TRUE,value=TRUE)
-        lanes.vars <- lane.vars
-    }
-    for(lane in 1:right.lanes){
-        ## in the case when vds.lanes==1, right.lanes also == 1
-        lane.pattern <- paste("r",lane,sep='')
-        lane.vars <- grep(pattern=lane.pattern,x=vds.vars
-                          ,perl=TRUE,value=TRUE)
-        lanes.vars <- c(lanes.vars,lane.vars)
-    }
-    vds.vars.lanes <- lanes.vars
-
-    pared.df <- df[,c(vds.vars.lanes,wim.vars.lanes,other.vars)]
-    pared.df
+    trimmed_df
 }

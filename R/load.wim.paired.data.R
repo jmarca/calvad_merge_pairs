@@ -50,6 +50,8 @@ load.wim.pair.data <- function(wim.pairs,
                                               direction=pairing$direction,
                                               year=year
                                               )
+        print(names(paired.RData))
+
         if(dim(paired.RData)[1] < 100){
             print(paste('pairing for',pairing$vds_id,pairing$wim_site,'pretty empty'))
             next()
@@ -57,7 +59,7 @@ load.wim.pair.data <- function(wim.pairs,
 
         ## trim off some variables
         df.trimmed <- evaluate.paired.data(paired.RData
-                                          ,vds.lanes=vds.lanes)
+                                          ,vds.names=vds.lanes)
 
         df.trimmed$vds_id <- pairing$vds_id
 
