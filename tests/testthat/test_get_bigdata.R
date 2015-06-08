@@ -5,11 +5,11 @@ rcouchutils::couch.makedb(parts)
 path <- './files'
 year <- 2012
 
-file <- './files/wim.51.E.vdsid.318383.2012.paired.RData'
+file <- paste(path,'wim.51.E.vdsid.318383.2012.paired.RData',sep='/')
 couch.put.merged.pair(trackingdb=parts,
                       vds.id=318383,
                       file=file)
-file <- './files/wim.52.W.vdsid.313822.2012.paired.RData'
+file <- paste(path,'wim.52.W.vdsid.313822.2012.paired.RData',sep='/')
 couch.put.merged.pair(trackingdb=parts,
                       vds.id=313822,
                       file=file)
@@ -125,7 +125,7 @@ test_that(
         lane_r1_vars <- grep(pattern='r1$',x=names(bigdata),perl=TRUE,value=TRUE)
         lane_r2_vars <- grep(pattern='r2$',x=names(bigdata),perl=TRUE,value=TRUE)
         lane_r3_vars <- grep(pattern='r3$',x=names(bigdata),perl=TRUE,value=TRUE)
-        expect_that(length(lane_l1_vars),equals(4))
+        expect_that(length(lane_l1_vars),equals(0))
         expect_that(length(lane_r1_vars),equals(14))
         expect_that(length(lane_r2_vars),equals(14))
         expect_that(length(lane_r3_vars),equals(0))

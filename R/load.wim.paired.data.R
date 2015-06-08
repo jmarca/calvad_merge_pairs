@@ -40,6 +40,8 @@ load.wim.pair.data <- function(wim.pairs,
                                db){
 
     bigdata <- data.frame()
+    wim_unique_lanes <- NULL
+    vds_unique_lanes <- calvadrscripts::extract_unique_lanes(vds.nvars)
 
     spd.pattern <- "(^sl1$|^sr\\d$)"
     for(pairing in wim.pairs){
@@ -63,38 +65,37 @@ load.wim.pair.data <- function(wim.pairs,
 
         if(length(bigdata)==0){
             bigdata <-  df.trimmed
-        }else{
-            ##print(summary(bigdata))
-            ##print(summary(df.trimmed))
+            df_wim_lanes <- grep(pattern='not_heavyheavy',x=names(df.trimmed),
+                                  perl=TRUE,value=TRUE,invert=FALSE)
+            wim_unique_lanes <- calvadrscripts::extract_unique_lanes(df_wim_lanes)
 
-            ## here I need to make sure all WIM-VDS sites have similar lanes
-            ## the concern is a site with *fewer* lanes than the vds site
+        }else{
             ic.names <- names(df.trimmed)
             bigdata.names <- names(bigdata)
-            ## keep the larger of the two
 
-            extra_existing_names <- setdiff(bigdata.names,ic.names)
-            extra_new_names <- setdiff(ic.names,bigdata.names)
+            df_wim_lanes <- grep(pattern='not_heavyheavy',x=ic.names,
+                                 perl=TRUE,value=TRUE,invert=FALSE)
+            new_wim_unique_lanes <- calvadrscripts::extract_unique_lanes(df_wim_lanes)
 
-            print('merging multiple paired sets, disjoint names are:')
-            print('extra bigdata names')
-            print(extra_existing_names)
+            ## only merge if new_wim_unique_lanes > vds lanes OR == old wim_unique_lanes
+            if(length(new_wim_unique_lanes) > length(vds_unique_lanes) ||
+               length(new_wim_unique_lanes) ==  length(wim_unique_lanes)){
 
-            print('extra new names')
-            print(extra_new_names)
+                print('merging new pair with old pair(s)')
+                print(paste('vds lanes',paste(vds_unique_lanes,collapse=','),
+                            'new wim pair lanes',paste(new_wim_unique_lanes,collapse=','),
+                            'old wim pair lanes',paste(wim_unique_lanes,collapse=',')))
+                ## here I need to make sure all WIM-VDS sites have similar lanes
+                ## the concern is a site with *fewer* lanes than the vds site
+                ## keep the larger of the two
 
-            ##common.names <- intersect(ic.names,bigdata.names)
-            ##bigdata <- bigdata[,common.names]
-            ##df.trimmed <- df.trimmed[,common.names]
-            if(length(extra_new_names)>0) {
-                bigdata[,extra_new_names] <- NA
+
+                common.names <- intersect(ic.names,bigdata.names)
+                bigdata <- bigdata[,common.names]
+                df.trimmed <- df.trimmed[,common.names]
+                bigdata <- rbind( bigdata, df.trimmed )
             }
-            ## print(summary(df.trimmed[,extra_existing_names]))
-            if(length(extra_existing_names)>0){
-                df.trimmed[,extra_existing_names] <- NA
-            }
-
-            bigdata <- rbind( bigdata, df.trimmed )
+            ## if not, don't merge
         }
     }
 
