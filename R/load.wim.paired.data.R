@@ -43,7 +43,7 @@ load.wim.pair.data <- function(wim.pairs,
 
     spd.pattern <- "(^sl1$|^sr\\d$)"
     for(pairing in wim.pairs){
-        print(paste('processing pairing',pairing,collapse=' '))
+        print(paste('processing pairing',paste(pairing,collapse=' ')))
         paired.RData <- couch.get.merged.pair(trackingdb=db,
                                               vds.id=pairing$vds_id,
                                               wim.site=pairing$wim_site,
@@ -64,14 +64,36 @@ load.wim.pair.data <- function(wim.pairs,
         if(length(bigdata)==0){
             bigdata <-  df.trimmed
         }else{
+            ##print(summary(bigdata))
+            ##print(summary(df.trimmed))
+
             ## here I need to make sure all WIM-VDS sites have similar lanes
             ## the concern is a site with *fewer* lanes than the vds site
             ic.names <- names(df.trimmed)
             bigdata.names <- names(bigdata)
             ## keep the larger of the two
-            common.names <- intersect(ic.names,bigdata.names)
-            bigdata <- bigdata[,common.names]
-            df.trimmed <- df.trimmed[,common.names]
+
+            extra_existing_names <- setdiff(bigdata.names,ic.names)
+            extra_new_names <- setdiff(ic.names,bigdata.names)
+
+            print('merging multiple paired sets, disjoint names are:')
+            print('extra bigdata names')
+            print(extra_existing_names)
+
+            print('extra new names')
+            print(extra_new_names)
+
+            ##common.names <- intersect(ic.names,bigdata.names)
+            ##bigdata <- bigdata[,common.names]
+            ##df.trimmed <- df.trimmed[,common.names]
+            if(length(extra_new_names)>0) {
+                bigdata[,extra_new_names] <- NA
+            }
+            ## print(summary(df.trimmed[,extra_existing_names]))
+            if(length(extra_existing_names)>0){
+                df.trimmed[,extra_existing_names] <- NA
+            }
+
             bigdata <- rbind( bigdata, df.trimmed )
         }
     }

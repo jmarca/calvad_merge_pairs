@@ -185,6 +185,15 @@ evaluate.paired.data <- function(df,vds.names){
     if(is.null(lanes_vds)){
         stop(paste('no vds lanes detected in passed vds.names:',vds.names))
     }
+
+    ## for later, extract the WIM lanes...those lanes with Truck data
+    varnames <-  names(df)
+    nhh_pattern <- 'not_heavyheavy'
+    df_laned_vars <- grep(pattern=nhh_pattern,x=varnames,
+                          perl=TRUE,value=TRUE,invert=FALSE)
+    wim_unique_lanes <- calvadrscripts::extract_unique_lanes(df)
+
+
     ## now make those the same as best as I can by dropping from df.
     ## I can't *add* to the paired data frame though, so it is a
     ## one-way fixing operation
@@ -226,7 +235,6 @@ evaluate.paired.data <- function(df,vds.names){
         df_laned_vars <- grep(pattern=nhh_pattern,x=varnames,
                               perl=TRUE,value=TRUE,invert=FALSE)
         ## now, in the wim-only laned variables, are there more than 2 lanes?
-        wim_unique_lanes <- calvadrscripts::extract_unique_lanes(df_laned_vars)
         if(length(wim_unique_lanes)>1){
             print(paste('just two lanes in target vds data'
                        ,'and more than one lane in WIM data in merged set. '
@@ -261,6 +269,68 @@ evaluate.paired.data <- function(df,vds.names){
                                  all=TRUE)
             trimmed_df <- expanded_df
 
+        }
+    }
+    ## do this only if lanes at WIM === 2 and lanes at VDS > 2
+    if(length(lanes_vds) > 2 && length(wim_unique_lanes) == 2){
+        ## similar to the above block, but in this case rename left
+        ## lane WIM data to lane r2
+        ## now, in the wim-only laned variables, are there more than 2 lanes?
+        print(paste('more than two lanes in target vds data'
+                   ,'but just two lanes in WIM data in merged set. '
+                   ,'make sure second lane in WIM merged set is renamed to r2'
+                   ,'so as to match up with VDS site'
+                   ,sep=' '))
+        ## okay, have something to do
+        ## extract all wim data from lane r2
+
+        ## get a list of laned variable names from trimmed_df in
+        ## right lane only
+        wim_right_lane2_pattern <- '_r2' ## only WIM data uses the _
+        wim_right_lane2_vars <- grep(pattern=wim_right_lane2_pattern,
+                                     x=names(df),
+                                     perl=TRUE,value=TRUE,invert=FALSE)
+
+        wim_left_lane_pattern <- 'l1' ## only WIM data uses the _, but
+                                      ## in this case I also want to
+                                      ## snag the paired VDS data and
+                                      ## make it nr2 and or2, instead of nl1, ol1
+
+        wim_left_lane_vars <- grep(pattern=wim_left_lane_pattern,
+                                   x=names(df),
+                                   perl=TRUE,value=TRUE,invert=FALSE)
+
+        print(paste('left lane vars',paste(wim_left_lane_vars,collapse=', '),sep=':'))
+        if(length(wim_right_lane2_vars) == 0){
+            ## no existing right 2 lane, so move left lane (l1) to right 2 (r2)
+            ## grab the rightlane2 WIM data from the merged wim/vds site
+            df_wim_left <- df[,c(wim_left_lane_vars,unlaned_vars)]
+            rename_r2_l1 <- sub(pattern='l1$',replacement='r2',
+                                x=names(df_wim_left),
+                                perl=TRUE)
+            ## do the rename
+            names(df_wim_left) <- rename_r2_l1
+
+            ## exclude those that already exist, which pretty much
+            ## only means wgt_spd_all_veh_speed_l1 and
+            ## count_all_veh_speed_l1 if those are already in the
+            ## trimmed_df data.frame
+
+            for(llv in wim_left_lane_vars){
+                trimmed_df[,llv] <- NULL
+            }
+
+            non_overlapping_l1 <- setdiff(rename_r2_l1,names(trimmed_df))
+            ## print("non_overlapping_l1")
+            ## print(non_overlapping_l1)
+
+            expanded_df <- merge(trimmed_df,
+                                 df_wim_left[,c(unlaned_vars,
+                                                non_overlapping_l1)],
+                                 all=TRUE)
+            trimmed_df <- expanded_df
+            ##print('trimmed names')
+            ##print(names(trimmed_df))
         }
     }
 
