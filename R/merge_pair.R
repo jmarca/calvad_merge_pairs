@@ -69,6 +69,9 @@ couch.get.merged.pair <- function(trackingdb,vds.id,wim.site,direction,year){
     res <- rcouchutils::couch.get.attachment(db=trackingdb
                                             ,docname=vds.id
                                             ,attachment=filepath[2])
+    if(is.null(res)){
+        return(NULL)
+    }
     varnames <- names(res)
     barfl <- res[[1]][[varnames[1]]]
     return(barfl)

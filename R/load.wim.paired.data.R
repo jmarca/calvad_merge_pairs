@@ -52,7 +52,7 @@ load.wim.pair.data <- function(wim.pairs,
                                               direction=pairing$direction,
                                               year=year
                                               )
-        if(dim(paired.RData)[1] < 100){
+        if(is.null(paired.RData) || dim(paired.RData)[1] < 100){
             print(paste('pairing for',pairing$vds_id,pairing$wim_site,'pretty empty'))
             next()
         }
