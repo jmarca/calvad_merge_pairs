@@ -44,6 +44,7 @@ make.merged.filepath <- function(vdsid,year,wim.site,direction,rootpath){
 ##' what it is supposed to be named to be a valid merged dataframe
 ##' @author James E. Marca
 ##' @export
+##'
 couch.has.merged.pair <- function(trackingdb,vds.id,wim.site,direction,year){
     filepath <- make.merged.filepath(vds.id,year,wim.site,direction,'.')
     have_one <- rcouchutils::couch.has.attachment(db=trackingdb
