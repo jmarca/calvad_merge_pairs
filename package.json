@@ -4,23 +4,24 @@
   "description": "merge vds and wim pairs",
   "main": "lib/merge_wim_vds_pairs.js",
   "dependencies": {
-      "calvad_vds_sites": "git://github.com/jmarca/calvad_vds_sites",
-      "calvad_wim_sites": "git://github.com/jmarca/calvad_wim_sites",
-      "calvad_rscripts": "jmarca/calvad_rscripts",
-      "rcouchutils":"git://github.com/jmarca/rstats_couch_utils.git",
-      "configr":"git://github.com/jmarca/configr.git",
-      "config_okay": "",
-      "couch_check_state": "git://github.com/jmarca/couch_check_state",
-      "lodash": "",
-      "pg": "",
-      "queue-async": ""
+    "calvad_vds_sites": "git://github.com/jmarca/calvad_vds_sites",
+    "calvad_wim_sites": "git://github.com/jmarca/calvad_wim_sites",
+    "calvad_rscripts": "jmarca/calvad_rscripts",
+    "rcouchutils": "git://github.com/jmarca/rstats_couch_utils.git",
+    "configr": "git://github.com/jmarca/configr.git",
+    "config_okay": "",
+    "couch_check_state": "git://github.com/jmarca/couch_check_state",
+    "lodash": "",
+    "pg": "",
+    "queue-async": ""
   },
   "devDependencies": {
+    "mocha": "^2.4.5",
     "should": "^6.0.1"
   },
   "scripts": {
-      "test": "Rscript Rtest.R",
-      "install":"Rscript Rinstall.R"
+    "test": "Rscript Rtest.R",
+    "install": "Rscript Rinstall.R"
   },
   "repository": {
     "type": "git",

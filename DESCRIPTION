@@ -3,7 +3,10 @@ Title: R and node.js to merge wim-vds pairs
 Version: 1.0.1
 Authors@R: as.person(c("James Marca <jmarca@translab.its.uci.edu> [aut, cre]"))
 Description: This package contains node and R necessary to merge wim-vds pairs.
-Depends: R (>= 3.1.1)
+Depends:
+    R (>= 3.1.1)
 License: GPL-2
 LazyData: true
-Suggests: testthat
+Suggests:
+    testthat
+RoxygenNote: 5.0.1

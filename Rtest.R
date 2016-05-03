@@ -12,3 +12,5 @@ lib_paths <- .libPaths()
 Sys.setenv(RCOUCHUTILS_TEST_CONFIG=paste(dot_is,'test.config.json',sep='/'))
 
 devtools::check()
+devtools::test()
+
