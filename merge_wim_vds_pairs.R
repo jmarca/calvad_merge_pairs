@@ -23,6 +23,12 @@ print(paste ('using config file =',config_file))
 config <- rcouchutils::get.config(config_file)
 db <- config$couchdb$trackingdb
 
+redo <- config$calvad$redo_pairs
+if(is.null(redo) || '' == redo){
+    redo <- FALSE
+}
+print(paste('redo is set to ',redo))
+
 ## which VDS site or sites?
 ##wim.vds.pairs <- get.list.closest.wim.pairs()
 ##wim.vds.pairs$dir <- capitalize(substr(wim.vds.pairs$direction,1,1))
@@ -172,8 +178,8 @@ while(length(merged.vds) < targetpair && pairidx <= neighborslength ){
                                      ,wim.site=wim.site
                                      ,direction=direction
                                      ,year=year)
-    if(have_one) {
-        print('already paired')
+    if(have_one && !redo) {
+        print(paste('already paired',have_one,redo))
         merged.vds[dim(merged.vds)[1]+1,'merged'] <- vds.id
         next
     }
