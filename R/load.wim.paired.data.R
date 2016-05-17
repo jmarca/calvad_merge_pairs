@@ -40,6 +40,10 @@ load.wim.pair.data <- function(wim.pairs,
                                db){
 
     bigdata <- data.frame()
+    holding.pairs <- list()
+    sort_index <- NULL
+    num_cols <- NULL
+    i <- 1
     wim_unique_lanes <- NULL
     vds_unique_lanes <- calvadrscripts::extract_unique_lanes(vds.nvars)
 
@@ -60,9 +64,28 @@ load.wim.pair.data <- function(wim.pairs,
         ## trim off some variables
         df.trimmed <- evaluate.paired.data(paired.RData
                                           ,vds.names=vds.nvars)
+        ## print(names(df.trimmed))
 
         df.trimmed$vds_id <- pairing$vds_id
 
+        holding_pairs[[i]] <- df.trimmed
+        sort_index <- c(sort_index,i)
+        num_cols <- c(num_cols(length(names(df.trimmed))))
+        i <- i+1
+
+    }
+
+    ## now sort the holding pairs in descending order according to the
+    ## number of columns.  More columns means better match vs the VDS
+    ## site
+    sorted_list <- data.frame(num_cols,sort_index)[order(num_cols,
+                                                         sort_index,
+                                                         decreasing=TRUE)
+                                                  ,2]
+    print(data.frame(num_cols,sort_index))
+    print(sorted_list)
+    for(idx in sorted_list){
+        df.trimmed <- holding_pairs[[idx]]
         if(length(bigdata)==0){
             bigdata <-  df.trimmed
             df_wim_lanes <- grep(pattern='not_heavyheavy',x=names(df.trimmed),
