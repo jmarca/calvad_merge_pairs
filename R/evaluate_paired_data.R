@@ -358,7 +358,7 @@ vds2_wim2 <- function(df,
     if(length(right_lane2_vars) > 0){
         ## print(right_lane2_vars)
         ## have r2 lanes, so rename and use as l1 data
-        print(left_lane_vars)
+        ##print(left_lane_vars)
 
         return_df <- df[,c(right_lane1_vars,
                            left_lane_vars,
@@ -438,7 +438,7 @@ vds2_wim3 <- function(df,
                              x=df_laned_vars,
                              perl=TRUE,value=TRUE,invert=FALSE)
 
-    print(right_lane2_vars)
+    ##print(right_lane2_vars)
     ## rename step
     ## rename truck l1 to r2
     rename_lane2 <- sub(pattern='r2$',replacement='l1',
@@ -544,7 +544,7 @@ vds3_wim3 <- function(df,
 
 
     ## pull out other lanes in VDS incoming
-    print(lanes_vds)
+    ##print(lanes_vds)
     right2_and_left1 <- 'r1|r2|l1'
     otherlanes <- grep(pattern=right2_and_left1,
                        x=lanes_vds,
@@ -554,7 +554,7 @@ vds3_wim3 <- function(df,
 
     ##
     ## print(wim_unique_lanes)
-    print(otherlanes)
+    ##print(otherlanes)
 
     ## now for each of these "other lanes", keep the related wim
     ## (truck) lane data, as well as any corresponding vds data in the
@@ -563,7 +563,7 @@ vds3_wim3 <- function(df,
     extra_wim <- NULL
     extra_vds <- NULL
     for(lane in otherlanes){
-        print(lane)
+        ##print(lane)
         ## extract corresponding lane from wim lanes, if any
 
         keep_wim_lane <- grep(pattern=lane,
@@ -571,7 +571,7 @@ vds3_wim3 <- function(df,
                               perl=TRUE,value=TRUE,
                               invert=FALSE)
         if(length(keep_wim_lane) == 0){
-            print('extra lane')
+            ##print('extra lane')
             extra_vds <- c(extra_vds,lane)
         }else{
 
@@ -588,7 +588,7 @@ vds3_wim3 <- function(df,
     }
     if(length(extra_vds) == 0){
         ## in this case, num vds lanes is not greater than num WIM lanes
-        print('extra vds is zero')
+        ##print('extra vds is zero')
         ## perhaps we have extra WIM data
 
         otherwimlanes <- grep(pattern=right2_and_left1,
@@ -599,14 +599,14 @@ vds3_wim3 <- function(df,
         if(length(otherwimlanes) == 0){
             ## in this case, wim lanes and vds lanes are exact
             ## so use left lane as is
-            print('extra wim lanes is zero')
+            ##print('extra wim lanes is zero')
             return_df <- df[,c(right_lanes_vars,left_lane_vars,unlaned_vars)]
             return(return_df)
         }else{
             ## more WIM right lanes than vds right lanes, so rename
             ## the first extra lane to be "l1"
-            print('extra wim lanes is not zero')
-            print(otherwimlanes)
+            ##print('extra wim lanes is not zero')
+            ##print(otherwimlanes)
             minwimlane <- (sort(otherwimlanes))[1]
             ## minwimlane is the minimum extra lane from WIM.
             last_right_lane_vars <- grep(pattern=minwimlane,
@@ -631,16 +631,16 @@ vds3_wim3 <- function(df,
         ## in this case, num vds lanes is greater than num WIM lanes
         ## so we just use everything as is
         ## form the output
-        print('extra vds is not zero')
+        ##print('extra vds is not zero')
 
         ## but it could be that while the truck lanes don't overlap,
         ## the paired data might also have extra VDS right lanes
-        print(extra_vds)
+        ## print(extra_vds)
         more_keep_vars <- grep(pattern=paste(extra_vds,sep='|'),
                                x=df_laned_vars,
                                perl=TRUE,value=TRUE,
                                invert=FALSE)
-        print(more_keep_vars)
+        ##print(more_keep_vars)
         return_df <- df[,c(right_lanes_vars,
                            more_keep_vars,
                            left_lane_vars,
