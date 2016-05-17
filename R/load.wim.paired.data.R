@@ -40,7 +40,7 @@ load.wim.pair.data <- function(wim.pairs,
                                db){
 
     bigdata <- data.frame()
-    holding.pairs <- list()
+    holding_pairs <- list()
     sort_index <- NULL
     num_cols <- NULL
     i <- 1
@@ -70,7 +70,7 @@ load.wim.pair.data <- function(wim.pairs,
 
         holding_pairs[[i]] <- df.trimmed
         sort_index <- c(sort_index,i)
-        num_cols <- c(num_cols(length(names(df.trimmed))))
+        num_cols <- c(num_cols,length(names(df.trimmed)))
         i <- i+1
 
     }
