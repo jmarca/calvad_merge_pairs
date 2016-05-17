@@ -121,12 +121,6 @@ evaluate.paired.data <- function(df,vds.names){
     df_laned_vars <- grep(pattern=laned_pattern,x=dfnames,
                        perl=TRUE,value=TRUE)
 
-    ## print('**************************************************')
-    ## print(laned_pattern)
-    ## print('**************************************************')
-    ## print(df_laned_vars)
-
-    ## print('**************************************************')
     # and this is the lanes in the DF that best match the incoming lanes
     laned_pattern <- paste(lanes_vds,'$',sep='',collapse='|')
     keep_theselaned_vars <- grep(pattern=laned_pattern,x=dfnames,
@@ -155,26 +149,33 @@ evaluate.paired.data <- function(df,vds.names){
     ## truck variables into the trimmed_df, renaming the lane part
     ## from _r2 to _l1
 
-    ## do this only if lanes at vds === 2
+    if(length(lanes_vds) == 1){
+        ## one lane cases
+        return_df <- vds1_wimN(df,
+                               df_laned_vars,
+                               keep_theselaned_vars,
+                               unlaned_vars)
+
+        return(return_df)
+    }
+
+    if(length(wim_unique_lanes) == 1){
+        ## one lane cases on the WIM side
+        return_df <- vds1_wimN(df,
+                               df_laned_vars,
+                               keep_theselaned_vars,
+                               unlaned_vars)
+        return(return_df)
+    }
     if(length(lanes_vds) == 2){
-        if(length(wim_unique_lanes)>1){
+        ## two lane cases
+
+        if(length(wim_unique_lanes) == 2){
             return_df <- vds2_wim2(df,
                                    df_laned_vars,
                                    keep_theselaned_vars,
                                    unlaned_vars)
-
-            ## ## exclude those that already exist, which pretty much
-            ## ## only means wgt_spd_all_veh_speed_l1 and
-            ## ## count_all_veh_speed_l1 if those are already in the
-            ## ## trimmed_df data.frame
-            ## non_overlapping <- setdiff(names(incoming_df),names(trimmed_df))
-
-
-            ## expanded_df <- merge(trimmed_df,
-            ##                     ,
-            ##                      all=TRUE)
-            ## trimmed_df <- expanded_df
-            return (return_df)
+            return(return_df)
         }else{
             ## vds lanes is 2, wim lanes =1 (or zero)
             return_df <- vds2_wim1(df,
@@ -188,7 +189,7 @@ evaluate.paired.data <- function(df,vds.names){
 
     ## still here? other cases
     if(length(lanes_vds)>2){
-        if(length(wim_unique_lanes)>1){
+        if(length(wim_unique_lanes) == 2){
             return_df <- vds3_wim2(df,
                                    df_laned_vars,
                                    keep_theselaned_vars,
@@ -196,9 +197,8 @@ evaluate.paired.data <- function(df,vds.names){
             ## post
             return(return_df)
 
-
         }else{
-            return_df <- vds3_wim1(df,
+            return_df <- vds3_wim3(df,
                                    df_laned_vars,
                                    keep_theselaned_vars,
                                    unlaned_vars)
@@ -206,21 +206,13 @@ evaluate.paired.data <- function(df,vds.names){
             return(return_df)
         }
 
-    }
-
-    if(length(lanes_vds) == 1){
-        return_df <- vds1_wimN(df,
-                               df_laned_vars,
-                               keep_theselaned_vars,
-                               unlaned_vars)
-        ## post
-        return(return_df)
     }else{
         ## I don't know.  if it isn't 1, 2, or >2, what else can it be?
         stop(paste('problem value for length of VDS site lanes vector',length(lanes_vds)))
     }
 
 }
+
 ##' One VDS lane, any number WIM lanes
 ##'
 ##' In this case, the incoming VDS site has one lane.  So just pull
@@ -242,7 +234,6 @@ evaluate.paired.data <- function(df,vds.names){
 ##'     incomig VDS variables
 ##' @author James E. Marca
 vds1_wimN <- function(df,
-                      df_wim_laned_vars,
                       df_laned_vars,
                       keep_theselaned_vars,
                       unlaned_vars){
@@ -334,12 +325,12 @@ vds2_wim2 <- function(df,
 
     ## borkborkbork()
 
-    print(paste('vds2_wim2'
-               ,'just two lanes in target vds data'
-               ,'and more than one lane in WIM data in merged set. '
-               ,'Re-using second lane from right at WIM site as'
-               ,'artificial left lane at paired VDS site'
-               ,sep=' '))
+    ## print(paste('vds2_wim2'
+    ##            ,'just two lanes in target vds data'
+    ##            ,'and more than one lane in WIM data in merged set. '
+    ##            ,'Re-using second lane from right at WIM site as'
+    ##            ,'artificial left lane at paired VDS site'
+    ##            ,sep=' '))
 
 
     ## going to keep all r1 vars
@@ -516,12 +507,36 @@ vds2_wim3 <- function(df,trimmed_df,laned_vars,unlaned_vars){
 ##'     incomig VDS variables
 ##' @author James E. Marca
 vds3_wim2 <- function(df,
-                      df_wim_laned_vars,
                       df_laned_vars,
                       keep_theselaned_vars,
                       unlaned_vars){
 
-    borkborkbork()
+    ## borkborkbork()
+
+    ## keep the truck l1 lanes, but rename them to r2
+
+    left_lane_pattern <- '_l1' ## only get truck lanes here with the _
+    left_lane_wim_vars <- grep(pattern=left_lane_pattern,
+                               x=df_laned_vars,
+                               perl=TRUE,value=TRUE,invert=FALSE)
+
+    ## cut those left lane truck vars out of keep_theselaned_vars
+    keep_theselaned_vars <- grep(pattern=left_lane_pattern,
+                               x=keep_theselaned_vars,
+                               perl=TRUE,value=TRUE,invert=TRUE)
+
+    ## rename truck l1 to r2
+    rename_wimlane2 <- sub(pattern='l1$',replacement='r2',
+                           x=left_lane_wim_vars,
+                           perl=TRUE)
+
+    ## scoop up any other vds lanes that match incoming wim lanes
+    ## then overwrite with the above
+
+    return_df <- df[,c(keep_theselaned_vars,unlaned_vars)]
+    return_df[,rename_wimlane2] <- df[,left_lane_wim_vars]
+
+    return(return_df)
 }
 
 ##     ## do this only if lanes at WIM == 2 and lanes at VDS > 2
