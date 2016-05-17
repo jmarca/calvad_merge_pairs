@@ -6,10 +6,7 @@ year <- 2012
 ## to properly exercise all alternatives
 
 wim_files <- c('./files/wim.98.N.vdsid.812776.2012.paired.RData',
-               './files/wim.100.S.vdsid.1108721.2012.paired.RData'
-               'files/wim.98.S.vdsid.819321.2012.paired.RData',
-               'files/wim.96.W.vdsid.801377.2012.paired.RData')
-vds_file <- 'files/801331_ML_2012.120.imputed.RData'
+               './files/wim.100.S.vdsid.1108721.2012.paired.RData')
 
 test_that(
     "correctly fix to the same number of lanes for wim site with 2 lanes",{
@@ -32,7 +29,7 @@ test_that(
     expect_that(new_df[,'nr1'],equals(already_merged[,'nr1']))
     expect_that(new_df[,'nl1'],equals(already_merged[,'nr2']))
     expect_that(new_df[,'heavyheavy_r1'],equals(already_merged[,'heavyheavy_r1']))
-    expect_that(new_df[,'heavyheavy_l1'],equals(already_merged[,'heavyheavy_r2']))
+    expect_that(new_df[,'heavyheavy_l1'],equals(already_merged[,'heavyheavy_l1']))
 
     vds.names <- c('nr1','nr2','nl1')
     new_df <- evaluate.paired.data(already_merged,vds.names)
@@ -121,5 +118,3 @@ test_that(
     testthat::expect_false('heavyheavy_l1' %in% names(new_df))
 
 })
-
-rcouchutils::couch.deletedb(parts)
