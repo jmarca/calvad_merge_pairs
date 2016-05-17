@@ -167,6 +167,7 @@ evaluate.paired.data <- function(df,vds.names){
                                unlaned_vars)
         return(return_df)
     }
+
     if(length(lanes_vds) == 2){
         ## two lane cases
 
@@ -178,7 +179,7 @@ evaluate.paired.data <- function(df,vds.names){
             return(return_df)
         }else{
             ## vds lanes is 2, wim lanes =1 (or zero)
-            return_df <- vds2_wim1(df,
+            return_df <- vds2_wim3(df,
                                    df_laned_vars,
                                    keep_theselaned_vars,
                                    unlaned_vars)
@@ -199,6 +200,8 @@ evaluate.paired.data <- function(df,vds.names){
 
         }else{
             return_df <- vds3_wim3(df,
+                                   lanes_vds,
+                                   wim_unique_lanes,
                                    df_laned_vars,
                                    keep_theselaned_vars,
                                    unlaned_vars)
@@ -220,8 +223,6 @@ evaluate.paired.data <- function(df,vds.names){
 ##'
 ##' @title vds1_wimN
 ##' @param df the data frame from the vds-wim paired site
-##' @param df_wim_laned_vars the variables for the WIM data in the
-##'     paired df
 ##' @param df_laned_vars all of the laned variables in the paired df,
 ##'     which includes the WIM data and the VDS paired data.
 ##' @param keep_theselaned_vars this is the laned data in the incoming
@@ -261,8 +262,6 @@ vds1_wimN <- function(df,
 ##'
 ##' @title vdsN_wim1
 ##' @param df the data frame from the vds-wim paired site
-##' @param df_wim_laned_vars the variables for the WIM data in the
-##'     paired df
 ##' @param df_laned_vars all of the laned variables in the paired df,
 ##'     which includes the WIM data and the VDS paired data.
 ##' @param keep_theselaned_vars this is the laned data in the incoming
@@ -307,6 +306,7 @@ vdsN_wim1 <- vds1_wimN
 ##' This function does that renaming of variables for this case
 ##'
 ##' @title two_vds_lanes_two_wim_lanes
+##' @param df the data frame from the vds-wim paired site
 ##' @param df_laned_vars all of the laned variables in the paired df,
 ##'     which includes the WIM data and the VDS paired data.
 ##' @param keep_theselaned_vars this is the laned data in the incoming
@@ -407,81 +407,50 @@ vds2_wim2 <- function(df,
 ##' This function does that renaming of variables for this case
 ##'
 ##' @title vds2_wim3
-##' @param df the wim_vds paired dataframe
-##' @param trimmed_df just the DF with WIM data
-##' @param laned_vars the variables relating to lanes
-##' @param unlaned_vars the variables relating to other stuff than
-##'     lanes...the time of day, observation counts and the like
+##' @param df the data frame from the vds-wim paired site
+##' @param df_laned_vars all of the laned variables in the paired df,
+##'     which includes the WIM data and the VDS paired data.
+##' @param keep_theselaned_vars this is the laned data in the incoming
+##'     VDS site, against which I am trying to match the vds-wim
+##'     paired site
+##' @param unlaned_vars variables in the df unrelated to lane-based
+##'     data that I should keep around in the result.  Things like
+##'     time stamp, number of observations, etc
 ##' @return a renamed and suitably trimmed wim_vds merged set
 ##' @author James E. Marca
-vds2_wim3 <- function(df,trimmed_df,laned_vars,unlaned_vars){
+vds2_wim3 <- function(df,
+                      df_laned_vars,
+                      keep_theselaned_vars,
+                      unlaned_vars){
 
-    varnames <-  names(df)
-
-    nhh_pattern <- 'not_heavyheavy'
-    df_laned_vars <- grep(pattern=nhh_pattern,x=varnames,
-                          perl=TRUE,value=TRUE,invert=FALSE)
-
-    print(paste('just two lanes in target vds data'
-               ,'and more than two lanes in WIM data in merged set. '
-               ,'Re-using second lane from right at WIM site as'
-               ,'artificial left lane to match up the target VDS site'
-               ,sep=' '))
-
-    ## get a list of laned variable names from trimmed_df in
-    ## right lane only
+    ## going to keep all r1 vars
     right_lane1_pattern <- 'r1' ## only WIM data uses the _ ,
                                     ## so be careful here to grab both
     right_lane1_vars <- grep(pattern=right_lane1_pattern,
-                                 x=names(df),
+                                 x=df_laned_vars,
                                  perl=TRUE,value=TRUE,invert=FALSE)
 
-    ## now the right 2 vds variables, if any
-    ## if there is an r2 set, then use it
-    vds_right_lane_2_pattern <- '[^_]r2'
-    vds_right_2_vars <-  grep(pattern=vds_right_lane2_pattern,
-                                 x=names(df),
-                                 perl=TRUE,value=TRUE,invert=FALSE)
+    ## keep VDS r2 lanes, but rename to l1
+    ## keep truck r2 lanes, but rename them to l1
+    right_lane2_pattern <- 'r2' ## only WIM data uses the _ ,
+                                ## so be careful here to grab both
+    right_lane2_vars <- grep(pattern=right_lane2_pattern,
+                             x=df_laned_vars,
+                             perl=TRUE,value=TRUE,invert=FALSE)
 
-    print('right 2 vars debug')
-    print(vds_right_2_vars)
-
-    ## now the left lane truck vars, maybe with VDS vars
-    wim_left_lane_pattern <- '_l1'
-    if(length(vds_right_2_vars) == 0){
-        ## in this case, use 'l1' not '_l1' to pick up VDS l1 vars
-        ## because there aren't any r2 vars
-        wim_left_lane_pattern <- 'l1'
-    }
-    wim_left_vars <-  grep(pattern=wim_left_lane_pattern,
-                           x=names(df),
-                           perl=TRUE,value=TRUE,invert=FALSE)
-
-    print('wim left vars debug')
-    print(wim_left_vars)
-
-
-    ## (don't forget to rename the left lane vars below to r2)
-
-    ## stash out all the variables that I am keeping.  two lanes worth
-
-    df_reduced <- df[,c(wim_right_lane1_vars,wim_left_vars,unlaned_vars)]
-
-    ## now for the renaming step, identify the left lane stuff
-
-    rename_l1_r2 <- sub(pattern='l1$',replacement='r2',
-                        x=names(df_reduced),
+    print(right_lane2_vars)
+    ## rename step
+    ## rename truck l1 to r2
+    rename_lane2 <- sub(pattern='r2$',replacement='l1',
+                        x=right_lane2_vars,
                         perl=TRUE)
 
+    ## create the result
 
-    ## do the rename
-    names(df_reduced) <- rename_l1_r2
+    return_df <- df[,c(right_lane1_vars,unlaned_vars)]
+    return_df[,rename_lane2] <- df[,right_lane2_vars]
 
-    print('are the finished names renamed correctly, with no more l1 values?')
-    print(names(df_reduced))
-
-
-    return (df_reduced)
+    return(return_df)
 
 }
 
@@ -493,8 +462,6 @@ vds2_wim3 <- function(df,trimmed_df,laned_vars,unlaned_vars){
 ##' lanes.
 ##' @title vds3_wim2
 ##' @param df the data frame from the vds-wim paired site
-##' @param df_wim_laned_vars the variables for the WIM data in the
-##'     paired df
 ##' @param df_laned_vars all of the laned variables in the paired df,
 ##'     which includes the WIM data and the VDS paired data.
 ##' @param keep_theselaned_vars this is the laned data in the incoming
@@ -538,6 +505,162 @@ vds3_wim2 <- function(df,
 
     return(return_df)
 }
+
+##' Three or more VDS lanes, and three or more WIM lanes
+##'
+##' This function does that renaming of variables for this case
+##'
+##' @title vds3_wim3
+##' @param df the data frame from the vds-wim paired site
+##' @param df_laned_vars all of the laned variables in the paired df,
+##'     which includes the WIM data and the VDS paired data.
+##' @param keep_theselaned_vars this is the laned data in the incoming
+##'     VDS site, against which I am trying to match the vds-wim
+##'     paired site
+##' @param unlaned_vars variables in the df unrelated to lane-based
+##'     data that I should keep around in the result.  Things like
+##'     time stamp, number of observations, etc
+##' @return a renamed and suitably trimmed wim_vds merged set
+##' @author James E. Marca
+vds3_wim3 <- function(df,
+                      lanes_vds,
+                      wim_unique_lanes,
+                      df_laned_vars,
+                      keep_theselaned_vars,
+                      unlaned_vars){
+    ## going to keep all r1, r2 vars as is
+    right_lanes_pattern <- 'r1|r2' ## only WIM data uses the _ ,
+    ## so be careful here to grab both
+    right_lanes_vars <- grep(pattern=right_lanes_pattern,
+                             x=df_laned_vars,
+                             perl=TRUE,value=TRUE,invert=FALSE)
+
+    ## conditionally keep all left lane vars
+    left_lane_pattern <- 'l1' ## only WIM data uses the _ ,
+    ## so be careful here to grab both
+    left_lane_vars <- grep(pattern=left_lane_pattern,
+                           x=df_laned_vars,
+                           perl=TRUE,value=TRUE,invert=FALSE)
+
+
+    ## pull out other lanes in VDS incoming
+    print(lanes_vds)
+    right2_and_left1 <- 'r1|r2|l1'
+    otherlanes <- grep(pattern=right2_and_left1,
+                       x=lanes_vds,
+                       perl=TRUE,value=TRUE,
+                       invert=TRUE ## notice invert = TRUE !!!
+                       )
+
+    ##
+    ## print(wim_unique_lanes)
+    print(otherlanes)
+
+    ## now for each of these "other lanes", keep the related wim
+    ## (truck) lane data, as well as any corresponding vds data in the
+    ## paired set (df)
+
+    extra_wim <- NULL
+    extra_vds <- NULL
+    for(lane in otherlanes){
+        print(lane)
+        ## extract corresponding lane from wim lanes, if any
+
+        keep_wim_lane <- grep(pattern=lane,
+                              x=wim_unique_lanes,
+                              perl=TRUE,value=TRUE,
+                              invert=FALSE)
+        if(length(keep_wim_lane) == 0){
+            print('extra lane')
+            extra_vds <- c(extra_vds,lane)
+        }else{
+
+            ## this lane is in paired df.  So add all matches to
+            ## right_lanes_vars
+            more_right_lanes_vars <- grep(pattern=lane,
+                                          x=df_laned_vars,
+                                          perl=TRUE,value=TRUE,
+                                          invert=FALSE)
+            right_lanes_vars <- c(right_lanes_vars,more_right_lanes_vars)
+            ## also extend the matching pattern
+            right2_and_left1 <- paste(right2_and_left1,lane,sep='|')
+        }
+    }
+    if(length(extra_vds) == 0){
+        ## in this case, num vds lanes is not greater than num WIM lanes
+        print('extra vds is zero')
+        ## perhaps we have extra WIM data
+
+        otherwimlanes <- grep(pattern=right2_and_left1,
+                              x=wim_unique_lanes,
+                              perl=TRUE,value=TRUE,
+                              invert=TRUE ## notice invert = TRUE !!!
+                              )
+        if(length(otherwimlanes) == 0){
+            ## in this case, wim lanes and vds lanes are exact
+            ## so use left lane as is
+            print('extra wim lanes is zero')
+            return_df <- df[,c(right_lanes_vars,left_lane_vars,unlaned_vars)]
+            return(return_df)
+        }else{
+            ## more WIM right lanes than vds right lanes, so rename
+            ## the first extra lane to be "l1"
+            print('extra wim lanes is not zero')
+            print(otherwimlanes)
+            minwimlane <- (sort(otherwimlanes))[1]
+            ## minwimlane is the minimum extra lane from WIM.
+            last_right_lane_vars <- grep(pattern=minwimlane,
+                                         x=df_laned_vars,
+                                         perl=TRUE,value=TRUE,
+                                         invert=FALSE)
+
+            ## set up the renaming
+            rename_rightlanevars <- sub(pattern=paste(minwimlane,'$',sep=''),
+                                        replacement='l1',
+                                        x=last_right_lane_vars,
+                                        perl=TRUE)
+
+            return_df <- df[,c(right_lanes_vars,unlaned_vars)]
+            return_df[,rename_rightlanevars] <- df[,last_right_lane_vars]
+            return(return_df)
+
+        }
+
+
+    }else{
+        ## in this case, num vds lanes is greater than num WIM lanes
+        ## so we just use everything as is
+        ## form the output
+        print('extra vds is not zero')
+
+        ## but it could be that while the truck lanes don't overlap,
+        ## the paired data might also have extra VDS right lanes
+        print(extra_vds)
+        more_keep_vars <- grep(pattern=paste(extra_vds,sep='|'),
+                               x=df_laned_vars,
+                               perl=TRUE,value=TRUE,
+                               invert=FALSE)
+        print(more_keep_vars)
+        return_df <- df[,c(right_lanes_vars,
+                           more_keep_vars,
+                           left_lane_vars,
+                           unlaned_vars)]
+
+        return(return_df)
+    }
+
+    ## why are you still here?
+    stop(paste('bad condition in vds3 wim3 case:',
+               paste(c(
+                   lanes_vds,
+                   wim_unique_lanes)
+                  ,sep=', '
+                   )
+                   ,collapse=': '))
+
+}
+
+
 
 ##     ## do this only if lanes at WIM == 2 and lanes at VDS > 2
 ## ##    if(length(lanes_vds) > 2 && length(wim_unique_lanes) == 2){
