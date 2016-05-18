@@ -120,10 +120,11 @@ vds.ids <- data.frame('vdsid'=vds.ids[,1],
                       )
 
 ## get wim file
+
 df.wim.imputed <- calvadrscripts::get.amelia.wim.file.local(site_no=wim.site
                                            ,year=year
                                            ,direction=direction
-                                           ,path=wim.path)
+                                           ,path=paste(wim.path,year,sep='/'))
 
 if( length(df.wim.imputed) == 1 ){
     print(paste("amelia run for wim not good",df.wim.imputed))
