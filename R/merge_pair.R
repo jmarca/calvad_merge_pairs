@@ -150,7 +150,13 @@ merge_wim_with_vds <- function(df.wim.merged,
         force.plot=FALSE,
         trackingdb=trackingdb)
 
+    ## strip tod, day from df.vds.merged
+    keep.names <- setdiff(names(df.vds.merged),c('tod','day'))
+
+    df.vds.merged <- df.vds.merged[,keep.names]
+
     print(paste("dim(df.vds.merged) <- (", paste(dim(df.vds.merged),collapse=','),')'))
+
 
     df.merged <- merge(df.vds.merged, df.wim.merged,
                        all=FALSE,
