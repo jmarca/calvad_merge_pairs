@@ -7,7 +7,32 @@ This repo is just for code that merges paired WIM and VDS sites.  It
 is a refactor of code from my bdp repo, and will rely heavily on my
 calvad_rscripts, etc components.
 
+For an overview, see the section titled "Join Wim and VDS: Pairs and
+Neighbors" in the CalVAD final report (which is contained in the file
+`data_processing_wimvds.md`).
+
+# Add TAMS to CalVAD
+
+The latest edits to this code (June 2017) relate to integrating TAMS
+sites as if they are WIM sites into CalVAD.
+
+Most of the work is done elsewhere, but here there need to be edits to
+make sure that TAMS sites are included in the WIM queries and
+manipulations, such that a VDS site is paired with every TAMS site.
+
+Key steps will entail making sure (with tests) that completed TAMS
+sites get pulled in with every action that operates on WIM sites.
+
+(One annoying problem is that the tests for this package rely on a live
+DB, not on fake data.  So I'll need to copy and paste test scaffolding
+from another package.)
+
+
+
+
 # Refactor and rewrite
+
+(The below was written in May 2015, and done and working as of May 2016.)
 
 Rather than leaving most of the work in calvad_data_extract sql files,
 and recognizing that the pairing and merging step has to happen after
@@ -43,3 +68,9 @@ will have to be without freeway and direction limits, but perhaps with
 some sort of spatial inclusion...up down left right.
 
 Anyway, neighbors are handled in the repository calvad_wim_neighbors
+
+
+# Configuration
+
+The years are not set in the config.json file at this time, apparently
+you need to set the year in the code.
